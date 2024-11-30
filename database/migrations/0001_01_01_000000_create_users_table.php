@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('phone')->unique();
             $table->string('email')->unique();
             $table->string('job_title')->nullable();
-            $table->integer('national_id')->unique();
+            $table->string('national_id')->unique();
             $table->boolean('is_active')->default(1);
             $table->enum('gender', ['male', 'female'])->nullable();
             $table->enum('role', ['admin', 'owener', 'user'])->default('user');

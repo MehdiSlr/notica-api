@@ -21,7 +21,7 @@ return new class extends Migration
             $table->unsignedBigInteger('owner')->foreign('owner')->references('id')->on('users');
             $table->string('phone')->unique();
             $table->string('email')->unique();
-            $table->integer('national_id')->unique();
+            $table->string('national_id')->unique();
             $table->string('address');
             $table->timestamp('established_date')->nullable();
             $table->timestamp('email_verified_at')->nullable();

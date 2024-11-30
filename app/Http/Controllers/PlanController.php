@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\PlanResource;
+use App\Http\Resources\Resource;
 use App\Models\Plan;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response as ResponseCode;
@@ -17,7 +17,7 @@ class PlanController extends Controller
 
             $plans = $this->_fetchData($request, $plans);
 
-            return PlanResource::collection($plans);
+            return Resource::collection($plans);
         } catch (\Exception $e) {
             _logger('error', 'Plan', 'index', $e->getMessage());
 
@@ -43,7 +43,7 @@ class PlanController extends Controller
                 ], ResponseCode::HTTP_NOT_FOUND);
             }
 
-            return new PlanResource($plan);
+            return new Resource($plan);
         } catch (\Exception $e) {
             _logger('error', 'Plan', 'show', $e->getMessage());
 
@@ -72,7 +72,6 @@ class PlanController extends Controller
             }
             
             Plan::create($request->all());
-            // dd($request->all());
             _logger('success', 'Plan', 'store', $request->all());
 
             return response()->json([
@@ -89,7 +88,7 @@ class PlanController extends Controller
         }
     }
 
-    public function update(Request $request, $plan)
+    public function update(Request $request,Plan $plan)
     {
         try {
             $validator = Validator::make($request->all(), [
@@ -201,7 +200,7 @@ class PlanController extends Controller
 
             $plans = $this->_fetchData($request, $plans);
 
-            return PlanResource::collection($plans);
+            return Resource::collection($plans);
         } catch (\Exception $e) {
             _logger('error', 'Plan', 'onlyTrashed', $e->getMessage());
 
@@ -219,7 +218,7 @@ class PlanController extends Controller
             
             $plans = $this->_fetchData($request, $plans);
 
-            return PlanResource::collection($plans);
+            return Resource::collection($plans);
         } catch (\Exception $e) {
             _logger('error', 'Plan', 'withTrashed', $e->getMessage());
 

@@ -3,23 +3,24 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\Resource;
-use App\Models\Company;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response as ResponseCode;
 use Validator;
 
-class CompanyController extends Controller
+class UserController extends Controller
 {
     public function index(Request $request)
     {
         try {
-            $comapnies = Company::query();
+            $users = User::query();
 
-            $comapnies = $this->_fetchData($request, $comapnies);
+            $users = $this->_fetchData($request, $users);
 
-            return Resource::collection($comapnies);
+            return Resource::collection($users);
         } catch (\Exception $e) {
-            _logger('error', 'Company', 'index', $e->getMessage());
+            _logger('error', 'User', 'index', $e->getMessage());
 
             return response()->json([
                 'type' => 'error',
@@ -28,24 +29,24 @@ class CompanyController extends Controller
         }
     }
 
-    public function show($company)
+    public function show($user)
     {
         try {
-            $company = Company::withTrashed()
-                ->where('id', $company)
+            $user = User::withTrashed()
+                ->where('id', $user)
                 ->with('companies')
                 ->first();
 
-            if (!$company) {
+            if (!$user) {
                 return response()->json([
                     'type' => 'error',
-                    'message' => 'company not found.',
+                    'message' => 'user not found.',
                 ], ResponseCode::HTTP_NOT_FOUND);
             }
 
-            return new Resource($company);
+            return new Resource($user);
         } catch (\Exception $e) {
-            _logger('error', 'Company', 'show', $e->getMessage());
+            _logger('error', 'User', 'show', $e->getMessage());
 
             return response()->json([
                 'type' => 'error',
@@ -57,40 +58,60 @@ class CompanyController extends Controller
     public function store(Request $request)
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'name' => 'required|string',
-                'logo' => 'string',
-                'description' => 'string',
-                'website' => 'string',
-                'slogan' => 'string',
-                'owner' => 'required|exists:users,id',
-                'phone' => 'numeric|unique:companies,phone',
-                'email' => 'email|unique:companies,email',
-                'national_id' => 'numeric|unique:companies,national_id',
-                'address' => 'string',
-                'established_date' => 'date',
-                'email_verified_at' => 'date',
-                'is_active' => 'boolean',
-                'plan_id' => 'exists:plans,id',
-                'settings' => 'array',
+            $request->merge([
+                'is_active' => $request->has('is_active') && !!$request->input('is_active'),
+                'can_buying' => $request->has('can_buying') && !!$request->input('can_buying'),
             ]);
             
+            $validator = Validator::make($request->all(), [
+                'first_name' => 'required|string',
+                'last_name' => 'required|string',
+                'phone' => 'numeric|unique:users,phone',
+                'email' => 'email|unique:users',
+                'job_title' => 'string',
+                'national_id' => 'numeric|unique:users,national_id',
+                'is_active' => 'boolean',
+                'gender' => 'in:male,female',
+                'role' => 'in:admin,owener,user',
+                'phone_verified_at' => 'date',
+                'email_verified_at' => 'date',
+                'birthday' => 'date',
+                'password' => 'required',
+                'settings' => 'array',
+            ]);
+
             if ($validator->fails()) {
                 return response()->json([
                     'type' => 'error',
                     'message' => $validator->errors(),
                 ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
             }
-            
-            Company::create($request->all());
-            _logger('success', 'Company', 'store', $request->all());
+            User::create([
+                'uuid' => Str::orderedUuid()->toString(),
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'phone' => $request->phone,
+                'email' => $request->email,
+                'job_title' => $request->job_title,
+                'national_id' => $request->national_id,
+                'is_active' => $request->is_active,
+                'gender' => $request->gender,
+                'role' => $request->role,
+                'phone_verified_at' => $request->phone_verified_at,
+                'email_verified_at' => $request->email_verified_at,
+                'birthday' => $request->birthday,
+                'password' => bcrypt($request->password),
+                'settings' => json_encode($request->settings),
+            ]); 
+
+            _logger('success', 'User', 'store', $request->all());
 
             return response()->json([
                 'type' => 'success',
-                'message' => 'company created successfully.',
+                'message' => 'user created successfully.',
             ], ResponseCode::HTTP_CREATED);
         } catch (\Exception $e) {
-            _logger('error', 'Company', 'store', $e->getMessage());
+            _logger('error', 'User', 'store', $e->getMessage());
 
             return response()->json([
                 'type' => 'error',
@@ -99,21 +120,22 @@ class CompanyController extends Controller
         }
     }
 
-    public function update(Request $request,Company $company)
+    public function update(Request $request, User $user)
     {
         try {
             $validator = Validator::make($request->all(), [
-                'name' => 'string',
-                'logo' => 'string',
-                'description' => 'string',
-                'website' => 'string',
-                'slogan' => 'string',
+                'first_name' => 'string',
+                'last_name' => 'string',
                 'phone' => 'numeric',
                 'email' => 'email',
-                'address' => 'string',
-                'email_verified_at' => 'date',
+                'job_title' => 'string',
+                'national_id' => 'numeric',
                 'is_active' => 'boolean',
-                'plan_id' => 'exists:plans,id',
+                'gender' => 'in:male,female',
+                'role' => 'in:admin,owener,user',
+                'phone_verified_at' => 'date',
+                'email_verified_at' => 'date',
+                'birthday' => 'date',
                 'settings' => 'array',
             ]);
 
@@ -124,17 +146,17 @@ class CompanyController extends Controller
                 ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
             }
 
-            $oldData = $company->toArray();
-            $company->update($request->all());
-
-            _logger('success', 'Company', 'update', $request->all(), $oldData);
+            $oldData = $user->toArray();
+            $user->update($request->all());
+            
+            _logger('success', 'User', 'update', $request->all(), $oldData);
 
             return response()->json([
                 'type' => 'success',
-                'message' => "company ($request->id) updated successfully.",
+                'message' => "user ($request->id) updated successfully.",
             ], ResponseCode::HTTP_OK);
         } catch (\Exception $e) {
-            _logger('error', 'Company', 'update', $e->getMessage());
+            _logger('error', 'User', 'update', $e->getMessage());
 
             return response()->json([
                 'type' => 'error',
@@ -143,18 +165,18 @@ class CompanyController extends Controller
         }
     }
 
-    public function delete(Company $company)
+    public function delete(User $user)
     {
         try {
-            $company->delete();
-            _logger('success', 'Company', 'delete', $company);
+            $user->delete();
+            _logger('success', 'User', 'delete', $user);
 
             return response()->json([
                 'type' => 'success',
-                'message' => "company ($company->id) deleted successfully.",
+                'message' => "user ($user->id) deleted successfully.",
             ], ResponseCode::HTTP_OK);
         } catch (\Exception $e) {
-            _logger('error', 'Company', 'delete', $e->getMessage());
+            _logger('error', 'User', 'delete', $e->getMessage());
 
             return response()->json([
                 'type' => 'error',
@@ -163,26 +185,26 @@ class CompanyController extends Controller
         }
     }
 
-    public function restore($company)
+    public function restore($user)
     {
         try {
-            $company = Company::withTrashed()->where('id', $company)->first();
+            $user = User::withTrashed()->where('id', $user)->first();
 
-            if (!$company) {
+            if (!$user) {
                 return response()->json([
                     'type' => 'error',
-                    'message' => 'company not found.',
+                    'message' => 'user not found.',
                 ], ResponseCode::HTTP_NOT_FOUND);
             }
-            $company->restore();
-            _logger('success', 'Company', 'restore', $company);
+            $user->restore();
+            _logger('success', 'User', 'restore', $user);
 
             return response()->json([
                 'type' => 'success',
-                'message' => "company ($company->id) restored successfully.",
+                'message' => "user ($user->id) restored successfully.",
             ], ResponseCode::HTTP_OK);
         } catch (\Exception $e) {
-            _logger('error', 'Company', 'restore', $e->getMessage());
+            _logger('error', 'User', 'restore', $e->getMessage());
 
             return response()->json([
                 'type' => 'error',
@@ -191,37 +213,20 @@ class CompanyController extends Controller
         }   
     }
 
-    // public function destroy($company)
-    // {
-    //     try {
-    //         $company = Company::withTrashed()->where('id', $company)->first();
-    //         $company->forceDelete();
-    //         _logger('success', 'Company', 'destroy', $company);
-
-    //         return response()->json([
-    //             'type' => 'success',
-    //             'message' => "company ($company->id) destroyed successfully.",
-    //         ], ResponseCode::HTTP_OK);
-    //     } catch (\Exception $e) {
-    //         _logger('error', 'Company', 'destroy', $e->getMessage());
-
-    //         return response()->json([
-    //             'type' => 'error',
-    //             'message' => 'server error 500.',
-    //         ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
-    //     }
-    // }
-
     public function onlyTrash(Request $request)
     {
         try {
-            $companie = Company::onlyTrashed();
+            $users = User::onlyTrashed();
 
-            $companie = $this->_fetchData($request, $companie);
+            $users = $this->_fetchData($request, $users);
 
-            return Resource::collection($companie);
+            return response()->json([
+                'type' => 'success',
+                'message' => 'users',
+                'data' => $users,
+            ], ResponseCode::HTTP_OK);
         } catch (\Exception $e) {
-            _logger('error', 'Company', 'onlyTrashed', $e->getMessage());
+            _logger('error', 'User', 'onlyTrashed', $e->getMessage());
 
             return response()->json([
                 'type' => 'error',
@@ -233,13 +238,17 @@ class CompanyController extends Controller
     public function withTrash(Request $request)
     {
         try {
-            $companie = Company::withTrashed();
-            
-            $companie = $this->_fetchData($request, $companie);
+            $users = User::withTrashed();
 
-            return Resource::collection($companie);
+            $users = $this->_fetchData($request, $users);
+
+            return response()->json([
+                'type' => 'success',
+                'message' => 'users',
+                'data' => $users,
+            ], ResponseCode::HTTP_OK);
         } catch (\Exception $e) {
-            _logger('error', 'Company', 'withTrashed', $e->getMessage());
+            _logger('error', 'User', 'withTrashed', $e->getMessage());
 
             return response()->json([
                 'type' => 'error',
