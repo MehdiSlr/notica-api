@@ -33,7 +33,7 @@ class PlanController extends Controller
         try {
             $plan = Plan::withTrashed()
                 ->where('id', $plan)
-                ->with('companies')
+                // ->with('companies')
                 ->first();
 
             if (!$plan) {
@@ -231,7 +231,7 @@ class PlanController extends Controller
 
     protected function _fetchData(Request $request, $query)
     {
-        if (!$request->has('per') || is_null($request->input('per'))) {
+        if (!$request->has('per') || $request->input('per') === null) {
             $request->merge(['per' => 25]);
         }
 

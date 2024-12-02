@@ -33,7 +33,7 @@ class CompanyController extends Controller
         try {
             $company = Company::withTrashed()
                 ->where('id', $company)
-                ->with('companies')
+                // ->with('companies')
                 ->first();
 
             if (!$company) {
@@ -215,11 +215,11 @@ class CompanyController extends Controller
     public function onlyTrash(Request $request)
     {
         try {
-            $companie = Company::onlyTrashed();
+            $companies = Company::onlyTrashed();
 
-            $companie = $this->_fetchData($request, $companie);
+            $companies = $this->_fetchData($request, $companies);
 
-            return Resource::collection($companie);
+            return Resource::collection($companies);
         } catch (\Exception $e) {
             _logger('error', 'Company', 'onlyTrashed', $e->getMessage());
 
@@ -233,11 +233,11 @@ class CompanyController extends Controller
     public function withTrash(Request $request)
     {
         try {
-            $companie = Company::withTrashed();
+            $companies = Company::withTrashed();
             
-            $companie = $this->_fetchData($request, $companie);
+            $companies = $this->_fetchData($request, $companies);
 
-            return Resource::collection($companie);
+            return Resource::collection($companies);
         } catch (\Exception $e) {
             _logger('error', 'Company', 'withTrashed', $e->getMessage());
 
@@ -250,7 +250,7 @@ class CompanyController extends Controller
 
     protected function _fetchData(Request $request, $query)
     {
-        if (!$request->has('per') || is_null($request->input('per'))) {
+        if (!$request->has('per') || $request->input('per') === null) {
             $request->merge(['per' => 25]);
         }
 

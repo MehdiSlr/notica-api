@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('message_text');
             $table->unsignedBigInteger('from')->foreign('from')->references('id')->on('companies');
             $table->unsignedBigInteger('to')->foreign('to')->references('id')->on('users');
-            $table->enum('status', ['sent', 'received', 'failed']);
+            $table->enum('status', ['sent', 'received', 'failed'])->nullable();
             $table->enum('type', ['auth', 'notification', 'advertise']);
             $table->enum('platform', ['app', 'telegram']);
             $table->boolean('is_read')->default(0);

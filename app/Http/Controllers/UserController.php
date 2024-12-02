@@ -259,7 +259,7 @@ class UserController extends Controller
 
     protected function _fetchData(Request $request, $query)
     {
-        if (!$request->has('per') || is_null($request->input('per'))) {
+        if (!$request->has('per') || $request->input('per') === null) {
             $request->merge(['per' => 25]);
         }
 
