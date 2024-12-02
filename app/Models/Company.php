@@ -30,6 +30,11 @@ class Company extends Model
         return $this->hasMany(Message::class);
     }
 
+    public function templates()
+    {
+        return $this->hasMany(Template::class);
+    }
+
     public function plan()
     {
         return $this->belongsTo(Plan::class);
