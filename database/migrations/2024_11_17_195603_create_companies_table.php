@@ -27,7 +27,7 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->boolean('is_active')->default(0);
             $table->unsignedBigInteger('plan_id')->foreign('plan_id')->references('id')->on('plans')->default(1);
-            $table->string('api_key', 80)->unique()->nullable()->index();
+            $table->string('api_key', 80)->foreign('api_key')->references('id')->on('api_keys')->default(1);
             $table->json('settings')->nullable();
             $table->timestamps();
             $table->softDeletes();
