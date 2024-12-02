@@ -19,14 +19,15 @@ return new class extends Migration
             $table->string('website')->nullable();
             $table->string('slogan')->nullable();
             $table->unsignedBigInteger('owner')->foreign('owner')->references('id')->on('users');
-            $table->string('phone')->unique();
-            $table->string('email')->unique();
+            $table->string('phone')->unique()->nullable();
+            $table->string('email')->unique()->nullable();
             $table->string('national_id')->unique();
             $table->string('address');
             $table->timestamp('established_date')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->boolean('is_active')->default(0);
             $table->unsignedBigInteger('plan_id')->foreign('plan_id')->references('id')->on('plans')->default(1);
+            $table->string('api_key', 80)->unique()->nullable()->index();
             $table->json('settings')->nullable();
             $table->timestamps();
             $table->softDeletes();
