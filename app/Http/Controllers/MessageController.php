@@ -32,7 +32,7 @@ class MessageController extends Controller
     {
         try {
             $message = Message::withTrashed()
-            ->wheres('id', $message)
+            ->where('id', $message)
             // ->with()
             ->first();
 
@@ -60,7 +60,7 @@ class MessageController extends Controller
             $validator = Validator::make($request->all(),
             [
                 'subject' => 'required|string',
-                'message_text' => 'required|string',
+                'message_text' => 'required|exists:templates,id',
                 'from' => 'required|exist:companies,id',
                 'to' => 'required|exist:users,id',
                 'status' => 'in:sent,received,failed',
@@ -76,7 +76,9 @@ class MessageController extends Controller
                 ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
             }
 
-            Message::create($request->all());
+            $message = Message::create($request->all());
+            $message->update(['status' => 'sent']);
+
             _logger('success', 'Message','store', $request->all());
 
             return response()->json([

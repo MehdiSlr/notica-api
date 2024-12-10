@@ -108,10 +108,8 @@ class TicketController extends Controller
                 return response()->json([
                     'type' => 'error',
                     'message' => $validator->errors(),
-                ], ResponseCode::HTTP_BAD_REQUEST);
+                ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
             }
-
-            // dd($request->file);
 
             if ($request->has('file')) {
                 if (strpos($request->file, '/')) {

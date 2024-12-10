@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\MessageController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
@@ -91,4 +92,26 @@ Route::controller(CompanyController::class)
         Route::get('/{ticket}', 'show')->name('show');
         Route::patch('/{ticket}', 'update')->name('update');
         Route::post('/upload', 'upload')->name('upload');
+    });
+
+    //Messages
+    Route::controller(MessageController::class)
+    ->middleware(['api'])
+    ->prefix('messages')
+    ->name('api.messages.')
+    ->missing(function (Request $request) {
+        return response()->json([
+            'type' => 'error',
+            'message' => 'message not found.',
+        ], 404);
+    })
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('/trash', 'onlyTrash')->name('onlyTrash');
+        Route::get('/with-trash', 'withTrash')->name('withTrash');
+        Route::get('/{message}', 'show')->name('show');
+        Route::patch('/{message}', 'update')->name('update');
+        Route::patch('/{message}/restore', 'restore')->name('restore');
+        Route::delete('/{message}', 'delete')->name('delete');
     });
