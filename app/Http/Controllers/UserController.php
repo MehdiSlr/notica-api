@@ -29,14 +29,9 @@ class UserController extends Controller
         }
     }
 
-    public function show($user)
+    public function show(User $user)
     {
         try {
-            $user = User::withTrashed()
-                ->where('id', $user)
-                ->with('companies')
-                ->first();
-
             if (!$user) {
                 return response()->json([
                     'type' => 'error',
