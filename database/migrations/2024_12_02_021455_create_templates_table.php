@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('title');
             $table->text('text');
             $table->unsignedBigInteger('type')->foreign('type')->references('id')->on('message_types');
-            $table->unsignedBigInteger('company')->foreign('company')->references('id')->on('companies');
+            $table->unsignedBigInteger('company_id')->foreign('company_id')->references('id')->on('companies');
             $table->enum('status', ['pending', 'accept', 'reject'])->default('pending');
             $table->boolean('is_active')->default(0);
             $table->timestamps();

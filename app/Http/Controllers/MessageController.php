@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\Resource;
+use App\Models\ApiKey;
 use App\Models\Message;
+use App\Models\Template;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response as ResponseCode;
@@ -61,10 +63,10 @@ class MessageController extends Controller
             [
                 'subject' => 'required|string',
                 'message_text' => 'required|exists:templates,id',
-                'from' => 'required|exist:companies,id',
-                'to' => 'required|exist:users,id',
+                'variables' => 'array',
+                'from' => 'exists:companies,id',
+                'to' => 'required|exists:users,id',
                 'status' => 'in:sent,received,failed',
-                'type' => 'required|in:auth,notification,advertise',
                 'platform' => 'required|in:app,telegram',
                 'is_read' => 'boolean'
             ]);
@@ -76,8 +78,63 @@ class MessageController extends Controller
                 ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
             }
 
-            $message = Message::create($request->all());
-            $message->update(['status' => 'sent']);
+            $apiKey = ApiKey::where('key', $request->header('x-api-key'))->first();
+
+            if (!$apiKey) {
+                return response()->json([
+                    'type' => 'error',
+                    'message' => 'invalid api key.'
+                ], ResponseCode::HTTP_UNAUTHORIZED);
+            }
+
+            $from = $apiKey->company_id;
+
+            if (!$from) {
+                return response()->json([
+                    'type' => 'error',
+                    'message' => 'invalid api key.'
+                ], ResponseCode::HTTP_UNAUTHORIZED);
+            }
+
+            $template = Template::find($request->message_text);
+
+            if (!$template) {
+                return response()->json([
+                    'type' => 'error',
+                    'message' => 'message template not found.',
+                ], ResponseCode::HTTP_NOT_FOUND);
+            }
+
+            $messageText = $template->text; 
+
+            if (strpos($messageText, '{{') !== false) {
+                if (!$request->variables) {
+                    return response()->json([
+                        'type' => 'error',
+                        'message' => 'variables not found.',
+                    ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
+                }
+    
+                foreach ($request->variables as $key => $value) {
+                    if (strpos($messageText, "{{$key}}") === false) {
+                        return response()->json([
+                            'type' => 'error',
+                            'message' => 'invalid variables.',
+                        ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
+                    }
+                    $messageText = str_replace("{{$key}}", $value, $messageText);
+                }
+            }
+
+            $message = Message::create([
+                'subject' => $request->subject,
+                'message_text' => $messageText,
+                'from' => $from,
+                'to' => $request->to,
+                'status' => $request->status ?? 'sent',
+                'platform' => $request->platform,
+                'is_read' => $request->is_read ?? 0
+            ]);
 
             _logger('success', 'Message','store', $request->all());
 
@@ -90,7 +147,7 @@ class MessageController extends Controller
 
             return response()->json([
                 'type' => 'error',
-                'message' =>'server error 500.'
+                'message' =>'server error 500.' . $e->getMessage()
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -102,6 +159,7 @@ class MessageController extends Controller
             [
                 'subject' =>'string',
                 'message_text' =>'string',
+                'variables' => 'json',
                 'from' => 'exist:companies,id',
                 'to' => 'exist:users,id',
                 'status' => 'in:sent,received,failed',

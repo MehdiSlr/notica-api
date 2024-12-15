@@ -15,7 +15,7 @@ class ApiKey extends Model
     protected $fillable = [
         'title',
         'key',
-        'secret',
+        'company_id',
     ];
 
     protected $dates = [

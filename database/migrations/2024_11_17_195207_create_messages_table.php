@@ -14,11 +14,10 @@ return new class extends Migration
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
             $table->string('subject');
-            $table->unsignedBigInteger('message_text')->foreign('message_text')->references('id')->on('templates');
+            $table->text('message_text');
             $table->unsignedBigInteger('from')->foreign('from')->references('id')->on('companies');
             $table->unsignedBigInteger('to')->foreign('to')->references('id')->on('users');
             $table->enum('status', ['sent', 'received', 'failed'])->nullable();
-            $table->enum('type', ['auth', 'notification', 'advertise']);
             $table->enum('platform', ['app', 'telegram']);
             $table->boolean('is_read')->default(0);
             $table->timestamps();

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->string('key')->unique();
+            $table->unsignedBigInteger('company_id')->foreign('company_id')->references('id')->on('companies');
             // $table->string('secret')->unique();
             $table->timestamps();
             $table->softDeletes();

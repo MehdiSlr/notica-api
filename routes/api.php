@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\MessageTypeController;
 use App\Http\Controllers\PlanController;
+use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -53,8 +56,8 @@ Route::controller(CompanyController::class)
         Route::delete('/{company}', 'delete')->name('delete');
     });
 
-    //Users
-    Route::controller(UserController::class)
+//Users
+Route::controller(UserController::class)
     ->middleware(['api'])
     ->prefix('users')
     ->name('api.users.')
@@ -75,8 +78,8 @@ Route::controller(CompanyController::class)
         Route::delete('/{user}', 'delete')->name('delete');
     });
 
-    //Tickets
-    Route::controller(TicketController::class)
+//Tickets
+Route::controller(TicketController::class)
     ->middleware(['api'])
     ->prefix('tickets')
     ->name('api.tickets.')
@@ -94,8 +97,8 @@ Route::controller(CompanyController::class)
         Route::post('/upload', 'upload')->name('upload');
     });
 
-    //Messages
-    Route::controller(MessageController::class)
+//Messages
+Route::controller(MessageController::class)
     ->middleware(['api'])
     ->prefix('messages')
     ->name('api.messages.')
@@ -114,4 +117,68 @@ Route::controller(CompanyController::class)
         Route::patch('/{message}', 'update')->name('update');
         Route::patch('/{message}/restore', 'restore')->name('restore');
         Route::delete('/{message}', 'delete')->name('delete');
+    });
+
+//MessageTypes
+Route::controller(MessageTypeController::class)
+    ->middleware(['api'])
+    ->prefix('message-types')
+    ->name('api.message-types.')
+    ->missing(function (Request $request) {
+        return response()->json([
+            'type' => 'error',
+            'message' => 'message type not found.',
+        ], 404);
+    })
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('/trash', 'onlyTrash')->name('onlyTrash');
+        Route::get('/with-trash', 'withTrash')->name('withTrash');
+        Route::get('/{messageType}', 'show')->name('show');
+        Route::patch('/{messageType}', 'update')->name('update');
+        Route::patch('/{messageType}/restore', 'restore')->name('restore');
+        Route::delete('/{messageType}', 'delete')->name('delete');
+    });
+
+//Templates
+Route::controller(TemplateController::class)
+    ->middleware(['api'])
+    ->prefix('templates')
+    ->name('api.templates.')
+    ->missing(function (Request $request) {
+        return response()->json([
+            'type' => 'error',
+            'message' => 'template not found.',
+        ], 404);
+    })
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('/trash', 'onlyTrash')->name('onlyTrash');
+        Route::get('/with-trash', 'withTrash')->name('withTrash');
+        Route::get('/{template}', 'show')->name('show');
+        Route::patch('/{template}', 'update')->name('update');
+        Route::patch('/{template}/restore', 'restore')->name('restore');
+        Route::delete('/{template}', 'delete')->name('delete');
+    });
+
+//ApiKeys
+Route::controller(ApiKeyController::class)
+    ->middleware(['api'])
+    ->prefix('api-keys')
+    ->name('api.api-keys.')
+    ->missing(function (Request $request) {
+        return response()->json([
+            'type' => 'error',
+            'message' => 'api key not found.',
+        ], 404);
+    })
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{apiKey}', 'show')->name('show');
+        Route::patch('/{apiKey}/restore', 'restore')->name('restore');
+        Route::delete('/{apiKey}', 'delete')->name('delete');
+        Route::delete('/{apiKey}/destroy', 'destroy')->name('destroy');
     });

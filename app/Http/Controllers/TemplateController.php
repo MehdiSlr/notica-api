@@ -79,7 +79,7 @@ class TemplateController extends Controller
                 'type' => $request->type,
                 'company_id' => $request->company_id,
                 'status' => 'pending',
-                'is_active' => $request->is_active,
+                'is_active' => $request->is_active ?? 0,
             ]);
 
             return response()->json([
@@ -91,7 +91,7 @@ class TemplateController extends Controller
 
             return response()->json([
                 'type' => 'error',
-                'message' => 'server error 500.',
+                'message' => 'server error 500.' . $e->getMessage(),
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

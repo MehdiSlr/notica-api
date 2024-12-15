@@ -16,7 +16,7 @@ class Template extends Model
         'title',
         'text',
         'type',
-        'company',
+        'company_id',
         'status',
         'is_active'
     ];
