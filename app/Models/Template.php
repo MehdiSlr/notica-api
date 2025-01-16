@@ -25,14 +25,14 @@ class Template extends Model
         'is_active' => 'boolean',
     ];
 
-    public function company()
+    public function companies()
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Company::class, 'company_id');
     }
 
-    public function messageType()
+    public function messageTypes()
     {
-        return $this->belongsTo(MessageType::class);
+        return $this->belongsTo(MessageType::class, 'type');
     }
 
     public function messages()

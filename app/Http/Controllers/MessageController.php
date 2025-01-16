@@ -2,20 +2,35 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Company;
+use App\Models\User;
+use App\Traits\SendSMS;
+use Illuminate\Routing\Controller;
 use App\Http\Resources\Resource;
 use App\Models\ApiKey;
 use App\Models\Message;
 use App\Models\Template;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response as ResponseCode;
 
 class MessageController extends Controller
 {
+    use SendSMS;
     public function index(Request $request)
     {
         try {
-            $messages = Message::query();
+            $requestedUser = auth('api')->user();
+
+            if ($requestedUser == null) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'unautorized.',
+                ], ResponseCode::HTTP_UNAUTHORIZED);
+            }
+
+            $messages = ($requestedUser->role == 'admin') ? Message::query() : Message::query()->where('to', $requestedUser->id);
 
             $messages = $this->_fetchData($request, $messages);
 
@@ -24,7 +39,7 @@ class MessageController extends Controller
             _logger('error', 'Message', 'index', $e->getMessage());
 
             return response()->json([
-                'type' => 'error',
+                'status' => 'error',
                 'message' => 'server error 500.',
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -33,14 +48,24 @@ class MessageController extends Controller
     public function show($message)
     {
         try {
-            $message = Message::withTrashed()
-            ->where('id', $message)
-            // ->with()
-            ->first();
+
+            $requestedUser = auth('api')->user();
+
+            if ($requestedUser == null) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'unautorized.',
+                ], ResponseCode::HTTP_UNAUTHORIZED);
+            }
+
+            $message = ($requestedUser->role == 'admin') ? Message::where('id', $message)->first() : Message::withTrashed()
+                ->where('id', $message)
+                ->where('to', $requestedUser->id)
+                ->first();
 
             if (!$message) {
                 return response()->json([
-                    'type' => 'error',
+                    'status' => 'error',
                     'message' => 'message not found.'
                 ], ResponseCode::HTTP_NOT_FOUND);
             }
@@ -50,7 +75,7 @@ class MessageController extends Controller
             _logger('error', 'Message', 'show', $e->getMessage());
 
             return response()->json([
-                'type' => 'error',
+                'status' => 'error',
                 'message' => 'server error 500.'
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -59,66 +84,83 @@ class MessageController extends Controller
     public function store(Request $request)
     {
         try {
-            $validator = Validator::make($request->all(),
-            [
-                'subject' => 'required|string',
-                'message_text' => 'required|exists:templates,id',
-                'variables' => 'array',
-                'from' => 'exists:companies,id',
-                'to' => 'required|exists:users,id',
-                'status' => 'in:sent,received,failed',
-                'platform' => 'required|in:app,telegram',
-                'is_read' => 'boolean'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'type' => 'error',
-                    'message' => $validator->errors()
-                ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
-            }
-
             $apiKey = ApiKey::where('key', $request->header('x-api-key'))->first();
 
             if (!$apiKey) {
                 return response()->json([
-                    'type' => 'error',
-                    'message' => 'invalid api key.'
+                    'status' => 'error',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
+            }
+
+            $allowed = ['subject', 'template_id', 'variables', 'to', 'platform'];
+            $filterRequest = $request->only($allowed);
+            $extra = array_diff(array_keys($request->all()), $allowed);
+
+            if (!empty($extra)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'The following fields are not allowed: ' . implode(', ', $extra),
+                ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            $validator = Validator::make($filterRequest,
+            [
+                'subject' => 'required|string',
+                'to' => 'required|numeric',
+                'template_id' => 'required|exists:templates,id',
+                'variables' => 'array',
+                'platform' => 'required|in:app,telegram',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $validator->errors()
+                ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
             }
 
             $from = $apiKey->company_id;
 
             if (!$from) {
                 return response()->json([
-                    'type' => 'error',
+                    'status' => 'error',
                     'message' => 'invalid api key.'
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
-            $template = Template::find($request->message_text);
+            $template = Template::find($request->template_id);
 
-            if (!$template) {
+            // check if template exists and belongs to the company
+            if (!$template || $template->company_id != $from) {
                 return response()->json([
-                    'type' => 'error',
+                    'status' => 'error',
                     'message' => 'message template not found.',
                 ], ResponseCode::HTTP_NOT_FOUND);
             }
 
-            $messageText = $template->text; 
+            //check if template is active or accepted
+            if ($template->status != true && $template->is_active != 'accept') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'message template is not active or accepted.',
+                ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            $messageText = $template->text;
 
             if (strpos($messageText, '{{') !== false) {
                 if (!$request->variables) {
                     return response()->json([
-                        'type' => 'error',
+                        'status' => 'error',
                         'message' => 'variables not found.',
                     ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
                 }
-    
+
                 foreach ($request->variables as $key => $value) {
                     if (strpos($messageText, "{{$key}}") === false) {
                         return response()->json([
-                            'type' => 'error',
+                            'status' => 'error',
                             'message' => 'invalid variables.',
                         ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
                     }
@@ -126,11 +168,36 @@ class MessageController extends Controller
                 }
             }
 
+            $to = User::query()->where('phone', $request->to)->first();
+            $comapany = Company::query()->where('id', $from)->first();
+
+            if (!$to) {
+                $invited = $this->_inviteUser($request->to, $comapany->name);
+
+                if (!$invited) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'message not sent.',
+                        'data' => [
+                            'phone' => $request->to,
+                            'reason' => 'the user does not have the Notica account and invite message was not sent.',
+                        ]
+                    ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
+                }
+
+                User::create([
+                    'phone' => $request->to,
+                    'uuid' => Str::orderedUuid()->toString(),
+                ]);
+
+                $to = User::query()->where('phone', $request->to)->first();
+            }
+
             $message = Message::create([
                 'subject' => $request->subject,
                 'message_text' => $messageText,
                 'from' => $from,
-                'to' => $request->to,
+                'to' => $to->id,
                 'status' => $request->status ?? 'sent',
                 'platform' => $request->platform,
                 'is_read' => $request->is_read ?? 0
@@ -139,14 +206,15 @@ class MessageController extends Controller
             _logger('success', 'Message','store', $request->all());
 
             return response()->json([
-                'type' =>'success',
-                'message' =>'message created successfully.'
+                'status' =>'success',
+                'message' =>'message sent successfully.',
+                'message id' => $message->id
             ], ResponseCode::HTTP_CREATED);
         } catch (\Exception $e) {
             _logger('error', 'Message', 'store', $e->getMessage());
 
             return response()->json([
-                'type' => 'error',
+                'status' => 'error',
                 'message' =>'server error 500.' . $e->getMessage()
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -155,40 +223,53 @@ class MessageController extends Controller
     public function update(Request $request,Message $message)
     {
         try {
-            $validator = Validator::make($request->all(),
+            $requestedUser = auth('api')->user();
+
+            if ($requestedUser == null || $requestedUser->id != $message->to) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'unautorized.',
+                ], ResponseCode::HTTP_UNAUTHORIZED);
+            }
+
+            $allowed = ['status', 'is_read'];
+            $filterRequest = $request->only($allowed);
+            $extra = array_diff(array_keys($request->all()), $allowed);
+
+            if (!empty($extra)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'The following fields are not allowed: ' . implode(', ', $extra),
+                ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            $validator = Validator::make($filterRequest,
             [
-                'subject' =>'string',
-                'message_text' =>'string',
-                'variables' => 'json',
-                'from' => 'exist:companies,id',
-                'to' => 'exist:users,id',
                 'status' => 'in:sent,received,failed',
-                'type' => 'in:auth,notification,advertise',
-                'platform' => 'in:app,telegram',
                 'is_read' => 'boolean'
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
-                    'type' => 'error',
+                    'status' => 'error',
                     'message' => $validator->errors()
                 ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
             }
 
             $oldData = $message->toArray();
             $message->update($request->all());
-            
+
             _logger('success', 'Message', 'update', $request->all(), $oldData);
 
             return response()->json([
-                'type' =>'success',
+                'status' =>'success',
                 'message' => "message ($message->id) updated successfully."
             ], ResponseCode::HTTP_OK);
         } catch (\Exception $e) {
             _logger('error', 'Message', 'update', $e->getMessage());
 
             return response()->json([
-                'type' => 'error',
+                'status' => 'error',
                 'message' =>'server error 500.'
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -197,18 +278,27 @@ class MessageController extends Controller
     public function delete(Message $message)
     {
         try {
+            $requestedUser = auth('api')->user();
+
+            if ($requestedUser == null || $requestedUser->id != $message->to) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'unautorized.',
+                ], ResponseCode::HTTP_UNAUTHORIZED);
+            }
+
             $message->delete();
             _logger('success', 'Message', 'delete', $message);
 
             return response()->json([
-                'type' => 'success',
+                'status' => 'success',
                 'message' => "message ($message->id) deleted successfully.",
             ], ResponseCode::HTTP_OK);
         } catch (\Exception $e) {
             _logger('error', 'Message', 'delete', $e->getMessage());
 
             return response()->json([
-                'type' => 'error',
+                'status' => 'error',
                 'message' => 'server error 500.',
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -217,6 +307,15 @@ class MessageController extends Controller
     public function onlyTrash(Request $request)
     {
         try {
+            $requestedUser = auth('api')->user();
+
+            if ($requestedUser == null || $requestedUser->role != 'admin') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'unautorized.',
+                ], ResponseCode::HTTP_UNAUTHORIZED);
+            }
+
             $messages = Message::onlyTrashed();
 
             $messages = $this->_fetchData($request, $messages);
@@ -226,7 +325,7 @@ class MessageController extends Controller
             _logger('error', 'Message', 'onlyTrashed', $e->getMessage());
 
             return response()->json([
-                'type' => 'error',
+                'status' => 'error',
                 'message' =>'server error 500.',
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -235,6 +334,14 @@ class MessageController extends Controller
     public function withTrash(Request $request)
     {
         try {
+            $requestedUser = auth('api')->user();
+
+            if ($requestedUser == null || $requestedUser->role != 'admin') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'unautorized.',
+                ], ResponseCode::HTTP_UNAUTHORIZED);
+            }
             $messages = Message::withTrashed();
 
             $messages = $this->_fetchData($request, $messages);
@@ -244,7 +351,7 @@ class MessageController extends Controller
             _logger('error', 'Message', 'withTrash', $e->getMessage());
 
             return response()->json([
-                'type' => 'error',
+                'status' => 'error',
                 'message' =>'server error 500.',
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }

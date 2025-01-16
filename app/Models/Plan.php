@@ -24,6 +24,6 @@ class Plan extends Model
 
     public function companies()
     {
-        return $this->hasMany(Company::class);
+        return $this->hasMany(Company::class, 'plan_id');
     }
 }

@@ -3,12 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ticket;
+use App\Models\Company;
+use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
 use App\Http\Resources\Resource;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response as ResponseCode;
 use Validator;
-use App\Http\Controllers\Controller;
 use App\Traits\UploaderFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -17,12 +18,32 @@ use Module\Ticket\app\Http\Resources\TicketResource;
 class TicketController extends Controller
 {
     use UploaderFile;
-    
+
     public function index(Request $request)
     {
 
         try {
-            $tickets = Ticket::query();
+            $requestedUser = auth('api')->user();
+
+            if ($requestedUser == null) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'unautorized.',
+                ], ResponseCode::HTTP_UNAUTHORIZED);
+            }
+
+            if ($requestedUser->role == 'admin') {
+                $tickets = Ticket::query();
+            } else if ($requestedUser->role == 'user') {
+                $tickets = Ticket::query()->where('user_id', $requestedUser->id);
+            } else if ($requestedUser->role == 'owner') {
+                $tickets = Ticket::query()->where('company_id', Company::where('owner', $requestedUser->id)->first()->id);
+            } else {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'unautorized.',
+                ], ResponseCode::HTTP_UNAUTHORIZED);
+            }
 
             $tickets = $this->_fetchData($request, $tickets);
 
@@ -31,8 +52,8 @@ class TicketController extends Controller
             _logger('error', 'Ticket', 'index', $e->getMessage());
 
             return response()->json([
-                'type' => 'error',
-                'message' => 'server error 500.',
+                'status' => 'error',
+                'message' => 'server error 500.' . $e->getMessage(),
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -42,16 +63,48 @@ class TicketController extends Controller
         try {
             if (!$ticket) {
                 return response()->json([
-                    'type' => 'error',
+                    'status' => 'error',
                     'message' => 'ticket not found.',
                 ], ResponseCode::HTTP_NOT_FOUND);
+            }
+
+            $requestedUser = auth('api')->user();
+
+            if ($requestedUser == null) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'unautorized.',
+                ], ResponseCode::HTTP_UNAUTHORIZED);
+            }
+
+            if ($requestedUser->role == 'admin') {
+                return new Resource($ticket);
+            } else if ($requestedUser->role == 'user') {
+                if ($ticket->user_id != $requestedUser->id) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'unautorized.',
+                    ], ResponseCode::HTTP_UNAUTHORIZED);
+                }
+            } else if ($requestedUser->role == 'owner') {
+                if ($ticket->company_id != Company::where('owner', $requestedUser->id)->first()->id) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'unautorized.',
+                    ], ResponseCode::HTTP_UNAUTHORIZED);
+                }
+            } else {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'unautorized.',
+                ], ResponseCode::HTTP_UNAUTHORIZED);
             }
             return new Resource($ticket);
         } catch (\Exception $e) {
             _logger('error', 'Ticket', 'show', $e->getMessage());
 
             return response()->json([
-                'type' => 'error',
+                'status' => 'error',
                 'message' => 'server error 500.',
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -59,6 +112,15 @@ class TicketController extends Controller
 
     public function upload(Request $request)
     {
+        $requestedUser = auth('api')->user();
+
+        if ($requestedUser == null) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'unautorized.',
+            ], ResponseCode::HTTP_UNAUTHORIZED);
+        }
+
         try {
             $validator = Validator::make($request->all(), [
                 'file' => 'required|file|mimes:jpeg,png,jpg,gif,svg,pdf,zip,doc,docx,xls,xlsx,csv,txt|max:10240',
@@ -66,7 +128,7 @@ class TicketController extends Controller
 
             if ($validator->fails()) {
                 return response()->json([
-                    'type' => 'error',
+                    'status' => 'error',
                     'message' => $validator->errors(),
                 ], ResponseCode::HTTP_BAD_REQUEST);
             }
@@ -75,7 +137,7 @@ class TicketController extends Controller
             _logger('success', 'Ticket', 'upload', $request->all());
 
             return response()->json([
-                'type' => 'success',
+                'status' => 'success',
                 'message' => 'file uploaded successfully.',
                 'data' => [
                     'file_name' => $fileName
@@ -85,7 +147,7 @@ class TicketController extends Controller
             _logger('error', 'Ticket', 'upload', $e->getMessage());
 
             return response()->json([
-                'type' => 'error',
+                'status' => 'error',
                 'message' => 'server error 500.',
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -94,19 +156,38 @@ class TicketController extends Controller
     public function store(Request $request)
     {
         try {
-            $validator = Validator::make($request->all(), [
+            $requestedUser = auth('api')->user();
+
+            if ($requestedUser == null) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'unautorized.',
+                ], ResponseCode::HTTP_UNAUTHORIZED);
+            }
+
+            $allowed = ['company_id', 'user_id', 'subject', 'body', 'reply_id', 'file'];
+            $filterRequest = $request->only($allowed);
+            $extra = array_diff(array_keys($request->all()), $allowed);
+
+            if (!empty($extra)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'The following fields are not allowed: ' . implode(', ', $extra),
+                ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            $validator = Validator::make($filterRequest, [
                 'company_id' => 'required|exists:companies,id',
                 'user_id' => 'required|exists:users,id',
                 'subject' => 'required|string',
                 'body' => 'required|string|max:1000|min:10',
                 'reply_id' => 'exists:tickets,id',
                 'file' => 'string',
-                // 'status' => 'in:pending,checked,closed',
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
-                    'type' => 'error',
+                    'status' => 'error',
                     'message' => $validator->errors(),
                 ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
             }
@@ -122,7 +203,7 @@ class TicketController extends Controller
 
                 if (!$isMoved) {
                     return response()->json([
-                        'type' => 'error',
+                        'status' => 'error',
                         'message' => "move process failed. file $fileName not found.",
                     ], ResponseCode::HTTP_NOT_FOUND);
                 }
@@ -132,8 +213,8 @@ class TicketController extends Controller
                 $ticket = Ticket::find($request->reply_id);
                 if (!$ticket) {
                     return response()->json([
-                        'type' => 'error',
-                        'message' => 'ticket not found.',
+                        'status' => 'error',
+                        'message' => 'reply ticket not found.',
                     ], ResponseCode::HTTP_NOT_FOUND);
                 }
 
@@ -156,14 +237,14 @@ class TicketController extends Controller
             _logger('success', 'Ticket', 'store', $request->all());
 
             return response()->json([
-                'type' => 'success',
+                'status' => 'success',
                 'message' => 'ticket ' . Ticket::latest()->first()->id . ' created successfully.',
             ], ResponseCode::HTTP_CREATED);
         } catch (\Exception $e) {
             _logger('error', 'Ticket', 'store', $e->getMessage());
 
             return response()->json([
-                'type' => 'error',
+                'status' => 'error',
                 'message' => 'server error 500.' . $e->getMessage(),
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -172,15 +253,42 @@ class TicketController extends Controller
     public function update(Request $request, Ticket $ticket)
     {
         try {
-            $validator = Validator::make($request->all(), [
+            $requestedUser = auth('api')->user();
+
+            if ($requestedUser == null) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'unautorized.',
+                ], ResponseCode::HTTP_UNAUTHORIZED);
+            }
+
+            $allowed = ['status'];
+            $filterRequest = $request->only($allowed);
+            $extra = array_diff(array_keys($request->all()), $allowed);
+
+            if (!empty($extra)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'The following fields are not allowed: ' . implode(', ', $extra),
+                ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            $validator = Validator::make($filterRequest, [
                 'status' => 'required|in:pending,checked,closed',
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
-                    'type' => 'error',
+                    'status' => 'error',
                     'message' => $validator->errors(),
                 ], ResponseCode::HTTP_BAD_REQUEST);
+            }
+
+            if ($ticket->user_id != $requestedUser->id) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'unautorized.',
+                ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
             $oldData = $ticket->toArray();
@@ -189,14 +297,14 @@ class TicketController extends Controller
             _logger('success', 'Ticket', 'update', $request->all(), $oldData);
 
             return response()->json([
-                'type' => 'success',
+                'status' => 'success',
                 'message' => "ticket ($ticket->id) updated successfully.",
             ], ResponseCode::HTTP_OK);
         } catch (\Exception $e) {
             _logger('error', 'Ticket', 'update', $e->getMessage());
 
             return response()->json([
-                'type' => 'error',
+                'status' => 'error',
                 'message' => 'server error 500.',
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }

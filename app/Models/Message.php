@@ -26,18 +26,18 @@ class Message extends Model
         'deleted_at'
     ];
 
-    public function company()
+    public function companies()
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Company::class, 'from');
     }
 
-    public function template()
+    public function templates()
     {
         return $this->belongsTo(Template::class);
     }
 
-    public function user()
+    public function users()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'to');
     }
 }

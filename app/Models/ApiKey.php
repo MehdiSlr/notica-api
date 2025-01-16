@@ -34,8 +34,8 @@ class ApiKey extends Model
         'deleted_at' => 'datetime',
     ];
 
-    public function company()
+    public function companies()
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsTo(Company::class, 'company_id');
     }
 }

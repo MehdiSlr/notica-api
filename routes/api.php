@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ApiKeyController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessageTypeController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
 
 // Plans
@@ -18,7 +20,7 @@ Route::controller(PlanController::class)
     ->name('api.plans.')
     ->missing(function (Request $request) {
         return response()->json([
-            'type' => 'error',
+            'status' => 'error',
             'message' => 'plan not found.',
         ], 404);
     })
@@ -41,7 +43,7 @@ Route::controller(CompanyController::class)
     ->name('api.companies.')
     ->missing(function (Request $request) {
         return response()->json([
-            'type' => 'error',
+            'status' => 'error',
             'message' => 'company not found.',
         ], 404);
     })
@@ -54,6 +56,7 @@ Route::controller(CompanyController::class)
         Route::patch('/{company}', 'update')->name('update');
         Route::patch('/{company}/restore', 'restore')->name('restore');
         Route::delete('/{company}', 'delete')->name('delete');
+        // Route::delete('/{company}/destroy', 'destroy')->name('destroy');
     });
 
 //Users
@@ -63,19 +66,19 @@ Route::controller(UserController::class)
     ->name('api.users.')
     ->missing(function (Request $request) {
         return response()->json([
-            'type' => 'error',
+            'status' => 'error',
             'message' => 'user not found.',
         ], 404);
     })
     ->group(function () {
         Route::get('/', 'index')->name('index');
-        Route::post('/', 'store')->name('store');
+        // Route::post('/', 'store')->name('store');
         Route::get('/trash', 'onlyTrash')->name('onlyTrash');
         Route::get('/with-trash', 'withTrash')->name('withTrash');
         Route::get('/{user}', 'show')->name('show');
         Route::patch('/{user}', 'update')->name('update');
-        Route::patch('/{user}/restore', 'restore')->name('restore');
-        Route::delete('/{user}', 'delete')->name('delete');
+        // Route::patch('/{user}/restore', 'restore')->name('restore');
+        // Route::delete('/{user}', 'delete')->name('delete');
     });
 
 //Tickets
@@ -85,7 +88,7 @@ Route::controller(TicketController::class)
     ->name('api.tickets.')
     ->missing(function (Request $request) {
         return response()->json([
-            'type' => 'error',
+            'status' => 'error',
             'message' => 'ticket not found.',
         ], 404);
     })
@@ -104,7 +107,7 @@ Route::controller(MessageController::class)
     ->name('api.messages.')
     ->missing(function (Request $request) {
         return response()->json([
-            'type' => 'error',
+            'status' => 'error',
             'message' => 'message not found.',
         ], 404);
     })
@@ -126,7 +129,7 @@ Route::controller(MessageTypeController::class)
     ->name('api.message-types.')
     ->missing(function (Request $request) {
         return response()->json([
-            'type' => 'error',
+            'status' => 'error',
             'message' => 'message type not found.',
         ], 404);
     })
@@ -148,7 +151,7 @@ Route::controller(TemplateController::class)
     ->name('api.templates.')
     ->missing(function (Request $request) {
         return response()->json([
-            'type' => 'error',
+            'status' => 'error',
             'message' => 'template not found.',
         ], 404);
     })
@@ -170,7 +173,7 @@ Route::controller(ApiKeyController::class)
     ->name('api.api-keys.')
     ->missing(function (Request $request) {
         return response()->json([
-            'type' => 'error',
+            'status' => 'error',
             'message' => 'api key not found.',
         ], 404);
     })
@@ -178,7 +181,22 @@ Route::controller(ApiKeyController::class)
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
         Route::get('/{apiKey}', 'show')->name('show');
+        // Route::patch('/{apiKey}', 'update')->name('update');
         Route::patch('/{apiKey}/restore', 'restore')->name('restore');
         Route::delete('/{apiKey}', 'delete')->name('delete');
-        Route::delete('/{apiKey}/destroy', 'destroy')->name('destroy');
+        // Route::delete('/{apiKey}/destroy', 'destroy')->name('destroy');
+    });
+
+// Auth
+Route::controller(AuthController::class)
+    ->middleware(['api'])
+    ->prefix('auth')
+    ->name('api.auth.')
+    ->group(function () {
+        // Route::post('/login', 'login')->name('login');
+        Route::post('/check-phone', 'checkPhone')->name('checkPhone');
+        Route::post('/verify-phone', 'verifyPhone')->name('verifyPhone');
+        // Route::post('/refresh', 'refresh')->name('refresh');
+        Route::post('/logout', 'logout')->name('logout');
+        Route::post('/me', 'me')->name('me');
     });

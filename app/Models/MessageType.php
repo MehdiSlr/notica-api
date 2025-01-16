@@ -26,6 +26,6 @@ class MessageType extends Model
 
     public function templates()
     {
-        return $this->hasMany(Template::class);
+        return $this->hasMany(Template::class, 'type');
     }
 }

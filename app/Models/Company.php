@@ -27,21 +27,21 @@ class Company extends Model
 
     public function messages()
     {
-        return $this->hasMany(Message::class);
+        return $this->hasMany(Message::class, 'from');
     }
 
     public function templates()
     {
-        return $this->hasMany(Template::class);
+        return $this->hasMany(Template::class, 'company_id');
     }
 
-    public function plan()
+    public function plans()
     {
-        return $this->belongsTo(Plan::class);
+        return $this->belongsTo(Plan::class, 'plan_id');
     }
 
     public function apiKeys()
     {
-        return $this->hasMany(ApiKey::class);
+        return $this->hasMany(ApiKey::class, 'company_id');
     }
 }
