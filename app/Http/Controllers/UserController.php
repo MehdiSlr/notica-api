@@ -164,7 +164,7 @@ class UserController extends Controller
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
-            if ($requsetedUser != $user || $requsetedUser->role != 'admin') {
+            if ($requsetedUser != $user && $requsetedUser->role != 'admin') {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'permission denied.'

@@ -10,7 +10,6 @@ use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
 
 // Plans
@@ -56,6 +55,7 @@ Route::controller(CompanyController::class)
         Route::patch('/{company}', 'update')->name('update');
         Route::patch('/{company}/restore', 'restore')->name('restore');
         Route::delete('/{company}', 'delete')->name('delete');
+        Route::post('/upload-logo', 'logo')->name('uploadLogo');
         // Route::delete('/{company}/destroy', 'destroy')->name('destroy');
     });
 
@@ -200,3 +200,11 @@ Route::controller(AuthController::class)
         Route::post('/logout', 'logout')->name('logout');
         Route::post('/me', 'me')->name('me');
     });
+
+// Fallback route for undefined routes
+Route::any('{any}', function(){
+    return response()->json([
+        'status'    => 'error',
+        'message'   => 'The API endpoint not found or method not allowed.',
+    ], 404);
+})->where('any', '.*');

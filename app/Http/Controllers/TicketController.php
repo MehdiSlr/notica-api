@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Ticket;
 use App\Models\Company;
+use App\Traits\FileManager;
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
 use App\Http\Resources\Resource;
@@ -17,7 +18,7 @@ use Module\Ticket\app\Http\Resources\TicketResource;
 
 class TicketController extends Controller
 {
-    use UploaderFile;
+    use FileManager;
 
     public function index(Request $request)
     {
@@ -123,7 +124,7 @@ class TicketController extends Controller
 
         try {
             $validator = Validator::make($request->all(), [
-                'file' => 'required|file|mimes:jpeg,png,jpg,gif,svg,pdf,zip,doc,docx,xls,xlsx,csv,txt|max:10240',
+                'file' => 'required|file|mimes:jpeg,png,jpg,gif,svg,webp,pdf,zip,doc,docx,xls,xlsx,csv,txt|max:10240',
             ]);
 
             if ($validator->fails()) {
@@ -133,7 +134,7 @@ class TicketController extends Controller
                 ], ResponseCode::HTTP_BAD_REQUEST);
             }
 
-            $fileName = $this->uploadFile($request->file('file'));
+            $fileName = $this->_uploadFile($request->file('file'));
             _logger('success', 'Ticket', 'upload', $request->all());
 
             return response()->json([
@@ -142,7 +143,7 @@ class TicketController extends Controller
                 'data' => [
                     'file_name' => $fileName
                 ]
-            ]);
+            ], ResponseCode::HTTP_CREATED);
         } catch (\Exception $e) {
             _logger('error', 'Ticket', 'upload', $e->getMessage());
 
@@ -199,7 +200,8 @@ class TicketController extends Controller
                 } else {
                     $fileName = $request->file;
                 }
-                $isMoved = Storage::move("tmp/$fileName", "files/tickets/ticket_$fileName");
+                $fileRealName = "ticket_{$requestedUser->id}_$fileName";
+                $isMoved = Storage::move("tmp/$fileName", "files/tickets/$fileRealName");
 
                 if (!$isMoved) {
                     return response()->json([
@@ -207,6 +209,8 @@ class TicketController extends Controller
                         'message' => "move process failed. file $fileName not found.",
                     ], ResponseCode::HTTP_NOT_FOUND);
                 }
+
+                $request->file = $fileRealName;
             }
 
             if ($request->reply_id) {
@@ -222,17 +226,9 @@ class TicketController extends Controller
                     'status' => 'checked'
                 ]);
             }
-
-            $fileName = isset($fileName) ? "ticket_$fileName" : null;
-            Ticket::create([
-                'company_id' => $request->company_id,
-                'user_id' => $request->user_id,
-                'subject' => $request->subject,
-                'body' => $request->body,
-                'reply_id' => $request->reply_id,
-                'file' => $fileName,
-                'status' => 'pending'
-            ]);
+            
+            $request->merge(['status' => 'pending']);
+            Ticket::create([$request->all()]);
 
             _logger('success', 'Ticket', 'store', $request->all());
 

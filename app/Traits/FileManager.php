@@ -5,7 +5,7 @@ namespace App\Traits;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Laravel\Facades\Image;
 
-trait UploaderFile
+trait FileManager
 {
     /**
      * Upload a file and handle it according to its type.
@@ -13,7 +13,7 @@ trait UploaderFile
      * @param \Illuminate\Http\UploadedFile $file
      * @return string
      */
-    public function uploadFile($file)
+    public function _uploadFile($file)
     {
         if (!$file->isValid()) {
             throw new \InvalidArgumentException('Invalid file upload.');
@@ -52,7 +52,7 @@ trait UploaderFile
     protected function handleImage($image)
     {
         $imageName = uniqid() . '.webp';
-        $imagePath = "tmp/{$imageName}";
+        $imagePath = "tmp/$imageName";
 
         // Read and convert the image to WebP format
         Image::read($image)
@@ -68,7 +68,7 @@ trait UploaderFile
      * @param string $path
      * @return void
      */
-    public function deleteFile($path)
+    public function _deleteFile($path)
     {
         Storage::delete($path);
     }

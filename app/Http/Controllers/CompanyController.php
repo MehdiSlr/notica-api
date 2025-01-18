@@ -5,13 +5,18 @@ namespace App\Http\Controllers;
 use App\Http\Resources\Resource;
 use App\Models\Company;
 use App\Models\Message;
+use App\Models\User;
+use App\Traits\FileManager;
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response as ResponseCode;
 use Validator;
 
 class CompanyController extends Controller
 {
+    use FileManager;
+
     public function index(Request $request)
     {
         try {
@@ -25,16 +30,16 @@ class CompanyController extends Controller
             }
 
             if ($requestedUser->role == 'admin'){
-                $comapnies = Company::query();
-            } else if ($requestedUser->role == 'user') {
-                $comapnies = Company::query()->whereHas('messages', function ($query) use ($requestedUser) {
+                $companies = Company::all();
+            } else {
+                $companies = Company::query()->whereHas('messages', function ($query) use ($requestedUser) {
                     $query->where('to', $requestedUser->id);
                 });
             }
 
-            $comapnies = $this->_fetchData($request, $comapnies);
+            $companies = $this->_fetchData($request, $companies);
 
-            return Resource::collection($comapnies);
+            return Resource::collection($companies);
         } catch (\Exception $e) {
             _logger('error', 'Company', 'index', $e->getMessage());
 
@@ -84,6 +89,60 @@ class CompanyController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'server error 500.',
+            ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function logo(Request $request)
+    {
+        try{
+            $requestedUser = auth('api')->user();
+
+            if ($requestedUser == null) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'unautorized.',
+                ], ResponseCode::HTTP_UNAUTHORIZED);
+            }
+
+            $allowed = ['file'];
+            $filterRequest = $request->only($allowed);
+            $extra = array_diff(array_keys($request->all()), $allowed);
+
+            if (!empty($extra)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'The following fields are not allowed: ' . implode(', ', $extra),
+                ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            $validator = Validator::make($filterRequest, [
+                'file' => 'required|file|mimes:jpeg,png,jpg,gif,svg,webp|max:10240',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $validator->errors(),
+                ], ResponseCode::HTTP_BAD_REQUEST);
+            }
+
+            $fileName = $this->_uploadFile($request->file('file'));
+            _logger('success', 'Company', 'logo', $request->all());
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'logo uploaded successfully.',
+                'data' => [
+                    'file_name' => $fileName
+                ]
+            ], ResponseCode::HTTP_CREATED);
+        } catch (\Exception $e) {
+            _logger('error', 'Company', 'logo', $e->getMessage());
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'server error 500.'. $e->getMessage(),
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -150,10 +209,37 @@ class CompanyController extends Controller
                 ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
             }
 
+            if ($request->has('logo')) {
+                if (strpos($request->logo, '/')) {
+                    $fileParts = explode('/', $request->logo);
+                    $fileName = end($fileParts);
+                } else {
+                    $fileName = $request->logo;
+                }
+
+                $fileRealName = "logo_{$request->name}_$fileName";
+                $isMoved = Storage::move("tmp/$fileName", "images/logos/logo_{$request->name}_$fileName");
+
+                if (!$isMoved) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => "move prosess failed. image $fileName not found.",
+                    ], ResponseCode::HTTP_NOT_FOUND);
+                }
+
+                $request->request->replace(['logo' => $fileRealName]);
+            }
+
             $owner = $requestedUser->id;
             $request->request->add(['owner' => $owner]);
 
             Company::create($request->all());
+
+            $user = User::where('id', $owner)->first();
+            $user->update([
+                'role' => 'owner',
+            ]);
+
             _logger('success', 'Company', 'store', $request->all());
 
             return response()->json([
@@ -182,7 +268,7 @@ class CompanyController extends Controller
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
-            if ($requestedUser->id != $company->owner || $requestedUser->role != 'admin') {
+            if ($requestedUser->id != $company->owner && $requestedUser->role != 'admin') {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'permission denied.',
@@ -230,6 +316,27 @@ class CompanyController extends Controller
                 ], ResponseCode::HTTP_FORBIDDEN);
             }
 
+            if ($request->has('logo')) {
+                if (strpos($request->logo, '/')) {
+                    $fileParts = explode('/', $request->logo);
+                    $fileName = end($fileParts);
+                } else {
+                    $fileName = $request->logo;
+                }
+
+                $fileRealName = "logo_{$company->name}_$fileName";
+                $isMoved = Storage::move("tmp/$fileName", "images/logos/$fileRealName");
+
+                if (!$isMoved) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => "move prosess failed. image $fileName not found.",
+                    ], ResponseCode::HTTP_NOT_FOUND);
+                }
+
+                $request->request->replace(['logo' => $fileRealName]);
+            }
+            
             $oldData = $company->toArray();
             $company->update($request->all());
 
@@ -237,7 +344,7 @@ class CompanyController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => "company ($request->id) updated successfully.",
+                'message' => "company ($company->id) updated successfully.",
             ], ResponseCode::HTTP_OK);
         } catch (\Exception $e) {
             _logger('error', 'Company', 'update', $e->getMessage());
