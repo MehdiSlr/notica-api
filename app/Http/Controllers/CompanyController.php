@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\Resource;
 use App\Models\Company;
-use App\Models\Message;
 use App\Models\User;
 use App\Traits\FileManager;
 use Illuminate\Routing\Controller;
@@ -336,7 +335,7 @@ class CompanyController extends Controller
 
                 $request->request->replace(['logo' => $fileRealName]);
             }
-            
+
             $oldData = $company->toArray();
             $company->update($request->all());
 

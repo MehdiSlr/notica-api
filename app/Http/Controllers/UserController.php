@@ -6,7 +6,6 @@ use Illuminate\Routing\Controller;
 use App\Http\Resources\Resource;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response as ResponseCode;
 use Validator;
 
@@ -220,6 +219,61 @@ class UserController extends Controller
             ], ResponseCode::HTTP_OK);
         } catch (\Exception $e) {
             _logger('error', 'User', 'update', $e->getMessage());
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'server error 500.',
+            ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function telegramId(Request $request)
+    {
+        try {
+            $allowed = ['uuid', 'telegram_id'];
+            $filterRequest = $request->only($allowed);
+            $extra = array_diff(array_keys($request->all()), $allowed);
+
+            if (!empty($extra)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'The following fields are not allowed: ' . implode(', ', $extra),
+                ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            $validator = Validator::make($filterRequest, [
+                'uuid' => 'required|string',
+                'telegram_id' => 'required|numeric',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $validator->errors(),
+                ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            $user = User::where('uuid', $request->uuid)->first();
+
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'user not found.',
+                ], ResponseCode::HTTP_NOT_FOUND);
+            }
+
+            $telegram_id = ($request->telegram_id == 0) ? null : $request->telegram_id;
+            $user->telegram_id = $telegram_id;
+            $user->save();
+
+            _logger('success', 'User', 'setTelegramId', $request->all());
+
+            return response()->json([
+                'status' => 'success',
+                'message' => "user ($user->id) telegram id updated successfully.",
+            ], ResponseCode::HTTP_OK);
+        } catch (\Exception $e) {
+            _logger('error', 'User', 'setTelegramId', $e->getMessage());
 
             return response()->json([
                 'status' => 'error',

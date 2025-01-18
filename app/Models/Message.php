@@ -26,6 +26,10 @@ class Message extends Model
         'deleted_at'
     ];
 
+    protected $casts = [
+        'platform' => 'array',
+    ];
+
     public function companies()
     {
         return $this->belongsTo(Company::class, 'from');

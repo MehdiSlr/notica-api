@@ -8,13 +8,9 @@ use App\Traits\FileManager;
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
 use App\Http\Resources\Resource;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response as ResponseCode;
 use Validator;
-use App\Traits\UploaderFile;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
-use Module\Ticket\app\Http\Resources\TicketResource;
 
 class TicketController extends Controller
 {
@@ -226,7 +222,7 @@ class TicketController extends Controller
                     'status' => 'checked'
                 ]);
             }
-            
+
             $request->merge(['status' => 'pending']);
             Ticket::create([$request->all()]);
 

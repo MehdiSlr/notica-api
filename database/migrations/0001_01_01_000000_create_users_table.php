@@ -26,6 +26,7 @@ return new class extends Migration
             $table->timestamp('phone_verified_at')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->timestamp('birthdate')->nullable();
+            $table->string('telegram_id')->nullable();
             $table->string('password')->nullable();
             $table->json('settings')->nullable();
             $table->rememberToken()->nullable();

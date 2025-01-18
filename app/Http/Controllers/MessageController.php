@@ -110,7 +110,7 @@ class MessageController extends Controller
                 'to' => 'required|numeric',
                 'template_id' => 'required|exists:templates,id',
                 'variables' => 'array',
-                'platform' => 'required|in:app,telegram',
+                'platform' => 'required|array',
             ]);
 
             if ($validator->fails()) {
@@ -192,6 +192,20 @@ class MessageController extends Controller
 
                 $to = User::query()->where('phone', $request->to)->first();
             }
+
+            $platform = $request->platform;
+
+            //check platform for values, allows 'app' or 'telegram' or both of them. if other retuen error
+            foreach ($platform as $key => $value) {
+                if (!in_array($value, ['app', 'telegram'])) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'invalid platform.',
+                    ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
+                }
+            }
+
+            dd($platform);
 
             $message = Message::create([
                 'subject' => $request->subject,

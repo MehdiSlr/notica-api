@@ -18,7 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('from')->foreign('from')->references('id')->on('companies');
             $table->unsignedBigInteger('to')->foreign('to')->references('id')->on('users');
             $table->enum('status', ['sent', 'received', 'failed'])->nullable();
-            $table->enum('platform', ['app', 'telegram']);
+            $table->string('platform');
             $table->boolean('is_read')->default(0);
             $table->timestamps();
             $table->softDeletes();

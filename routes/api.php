@@ -77,6 +77,7 @@ Route::controller(UserController::class)
         Route::get('/with-trash', 'withTrash')->name('withTrash');
         Route::get('/{user}', 'show')->name('show');
         Route::patch('/{user}', 'update')->name('update');
+        Route::post('/telegram-id', 'telegramId')->name('telegramId');
         // Route::patch('/{user}/restore', 'restore')->name('restore');
         // Route::delete('/{user}', 'delete')->name('delete');
     });

@@ -54,6 +54,10 @@ trait FileManager
         $imageName = uniqid() . '.webp';
         $imagePath = "tmp/$imageName";
 
+        if (!Storage::exists('tmp')) {
+            Storage::makeDirectory('tmp');
+        }
+
         // Read and convert the image to WebP format
         Image::read($image)
             ->toWebp()
