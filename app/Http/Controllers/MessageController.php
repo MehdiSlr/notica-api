@@ -26,7 +26,7 @@ class MessageController extends Controller
             if ($requestedUser == null) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -54,7 +54,7 @@ class MessageController extends Controller
             if ($requestedUser == null) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -149,7 +149,7 @@ class MessageController extends Controller
 
             $messageText = $template->text;
 
-            if (strpos($messageText, '{{') !== false) {
+            if (strpos($messageText, '{') !== false) {
                 if (!$request->variables) {
                     return response()->json([
                         'status' => 'error',
@@ -205,8 +205,6 @@ class MessageController extends Controller
                 }
             }
 
-            dd($platform);
-
             $message = Message::create([
                 'subject' => $request->subject,
                 'message_text' => $messageText,
@@ -242,7 +240,7 @@ class MessageController extends Controller
             if ($requestedUser == null || $requestedUser->id != $message->to) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -297,7 +295,7 @@ class MessageController extends Controller
             if ($requestedUser == null || $requestedUser->id != $message->to) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -326,7 +324,7 @@ class MessageController extends Controller
             if ($requestedUser == null || $requestedUser->role != 'admin') {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -353,7 +351,7 @@ class MessageController extends Controller
             if ($requestedUser == null || $requestedUser->role != 'admin') {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
             $messages = Message::withTrashed();

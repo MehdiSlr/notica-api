@@ -24,10 +24,6 @@ class ApiKey extends Model
         'deleted_at',
     ];
 
-    protected $hidden = [
-        'secret',
-    ];
-
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',

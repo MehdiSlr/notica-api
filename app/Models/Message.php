@@ -19,14 +19,12 @@ class Message extends Model
     ];
 
     protected $hidden = [
-        'from',
         'to',
-        'created_at',
         'updated_at',
-        'deleted_at'
     ];
 
     protected $casts = [
+        'is_read' => 'boolean',
         'platform' => 'array',
     ];
 

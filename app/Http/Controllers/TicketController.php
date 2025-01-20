@@ -25,7 +25,7 @@ class TicketController extends Controller
             if ($requestedUser == null) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -38,7 +38,7 @@ class TicketController extends Controller
             } else {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -70,7 +70,7 @@ class TicketController extends Controller
             if ($requestedUser == null) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -80,20 +80,20 @@ class TicketController extends Controller
                 if ($ticket->user_id != $requestedUser->id) {
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'unautorized.',
+                        'message' => 'unauthorized.',
                     ], ResponseCode::HTTP_UNAUTHORIZED);
                 }
             } else if ($requestedUser->role == 'owner') {
                 if ($ticket->company_id != Company::where('owner', $requestedUser->id)->first()->id) {
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'unautorized.',
+                        'message' => 'unauthorized.',
                     ], ResponseCode::HTTP_UNAUTHORIZED);
                 }
             } else {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
             return new Resource($ticket);
@@ -114,7 +114,7 @@ class TicketController extends Controller
         if ($requestedUser == null) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'unautorized.',
+                'message' => 'unauthorized.',
             ], ResponseCode::HTTP_UNAUTHORIZED);
         }
 
@@ -158,7 +158,7 @@ class TicketController extends Controller
             if ($requestedUser == null) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -250,7 +250,7 @@ class TicketController extends Controller
             if ($requestedUser == null) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -279,7 +279,7 @@ class TicketController extends Controller
             if ($ticket->user_id != $requestedUser->id) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 

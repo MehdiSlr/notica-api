@@ -19,7 +19,7 @@ class UserController extends Controller
             if ($requestedUser == null) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -54,7 +54,7 @@ class UserController extends Controller
             if ($requestedUser == null) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -159,7 +159,7 @@ class UserController extends Controller
             if ($requsetedUser == null) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -338,7 +338,7 @@ class UserController extends Controller
             if ($requestedUser == null) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -375,7 +375,7 @@ class UserController extends Controller
             if ($requestedUser == null) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 

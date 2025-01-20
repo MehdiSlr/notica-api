@@ -186,7 +186,7 @@ class AuthController extends Controller
         if (!$user) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'unautorized.',
+                'message' => 'unauthorized.',
             ], ResponseCode::HTTP_UNAUTHORIZED);
         }
         return response()->json(Auth::user());

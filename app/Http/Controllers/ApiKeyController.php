@@ -19,7 +19,7 @@ class ApiKeyController extends Controller
             if ($requestedUser == null) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -33,7 +33,7 @@ class ApiKeyController extends Controller
                 default:
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'unautorized.',
+                        'message' => 'unauthorized.',
                     ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -58,7 +58,7 @@ class ApiKeyController extends Controller
             if ($requestedUser == null) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -76,7 +76,7 @@ class ApiKeyController extends Controller
                 default:
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'unautorized.',
+                        'message' => 'unauthorized.',
                     ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -106,7 +106,7 @@ class ApiKeyController extends Controller
             if ($requestedUser == null || $requestedUser->role != 'owner') {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -164,7 +164,7 @@ class ApiKeyController extends Controller
             if ($requestedUser == null || $requestedUser->role != 'owner' || $apiKey->company_id != Company::where('owner', $requestedUser->id)->first()->id) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -201,7 +201,7 @@ class ApiKeyController extends Controller
             if ($requestedUser == null || $requestedUser->role != 'admin') {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -239,7 +239,7 @@ class ApiKeyController extends Controller
     //         if ($requestedUser == null || $requestedUser->role != 'admin') {
     //             return response()->json([
     //                 'status' => 'error',
-    //                 'message' => 'unautorized.',
+    //                 'message' => 'unauthorized.',
     //             ], ResponseCode::HTTP_UNAUTHORIZED);
     //         }
 

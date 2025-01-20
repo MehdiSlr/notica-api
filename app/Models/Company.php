@@ -18,10 +18,16 @@ class Company extends Model
         'deleted_at'
     ];
 
+    protected $dates = [
+        'created_at',
+        'updated_at',
+        'deleted_at',
+        'established_date'
+    ];
+
     protected $casts = [
         'settings' => 'array',
         'email_verified_at' => 'datetime',
-        'established_date' => 'datetime',
         'is_active' => 'boolean'
     ];
 

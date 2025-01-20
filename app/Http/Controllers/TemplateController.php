@@ -20,7 +20,7 @@ class TemplateController extends Controller
             if ($requestedUser == null) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -31,7 +31,7 @@ class TemplateController extends Controller
             } else {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -63,7 +63,7 @@ class TemplateController extends Controller
             if ($requestedUser == null) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -79,7 +79,7 @@ class TemplateController extends Controller
             } else {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -109,7 +109,7 @@ class TemplateController extends Controller
             if ($requestedUser == null) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -143,7 +143,7 @@ class TemplateController extends Controller
             if ($company == null) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -179,7 +179,7 @@ class TemplateController extends Controller
             if ($requestedUser == null) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -213,7 +213,7 @@ class TemplateController extends Controller
             if ($request->status && $requestedUser->role != 'admin') {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -252,7 +252,7 @@ class TemplateController extends Controller
             if ($requestedUser == null || $template->company_id != $requestedUser->company_id) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -281,7 +281,7 @@ class TemplateController extends Controller
             if ($requestedUser == null) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -315,7 +315,7 @@ class TemplateController extends Controller
             if ($requestedUser == null || $requestedUser->role != 'admin') {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
             $templates = Template::withTrashed();
@@ -341,7 +341,7 @@ class TemplateController extends Controller
             if ($requestedUser == null || $template->company_id != $requestedUser->company_id) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
@@ -370,7 +370,7 @@ class TemplateController extends Controller
             if ($requestedUser == null || $template->company_id != $requestedUser->company_id) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'unautorized.',
+                    'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
