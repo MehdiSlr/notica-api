@@ -352,11 +352,7 @@ class UserController extends Controller
 
             $users = $this->_fetchData($request, $users);
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'users',
-                'data' => $users,
-            ], ResponseCode::HTTP_OK);
+            return Resource::collection($users);
         } catch (\Exception $e) {
             _logger('error', 'User', 'onlyTrashed', $e->getMessage());
 

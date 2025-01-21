@@ -86,7 +86,18 @@ class MessageTypeController extends Controller
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
-            $validator = Validator::make($request->all(), [
+            $allowed = ['title', 'description', 'is_active'];
+            $filterRequest = $request->only($allowed);
+            $extra = array_diff(array_keys($request->all()), $allowed);
+
+            if (!empty($extra)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'The following fields are not allowed: ' . implode(', ', $extra),
+                ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            $validator = Validator::make($filterRequest, [
                 'title' => 'required|string',
                 'description' => 'string',
                 'is_active' => 'boolean',
@@ -252,6 +263,59 @@ class MessageTypeController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'server error 500.',
+            ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function onlyTrash(Request $request)
+    {
+        try {
+            $requestedUser = auth('api')->user();
+
+            if ($requestedUser == null || $requestedUser->role != 'admin') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'unauthorized.',
+                ], ResponseCode::HTTP_UNAUTHORIZED);
+            }
+
+            $messages = MessageType::onlyTrashed();
+
+            $messages = $this->_fetchData($request, $messages);
+
+            return Resource::collection($messages);
+        } catch (\Exception $e) {
+            _logger('error', 'Message', 'onlyTrashed', $e->getMessage());
+
+            return response()->json([
+                'status' => 'error',
+                'message' =>'server error 500.',
+            ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function withTrash(Request $request)
+    {
+        try {
+            $requestedUser = auth('api')->user();
+
+            if ($requestedUser == null || $requestedUser->role != 'admin') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'unauthorized.',
+                ], ResponseCode::HTTP_UNAUTHORIZED);
+            }
+            $messages = MessageType::withTrashed();
+
+            $messages = $this->_fetchData($request, $messages);
+
+            return Resource::collection($messages);
+        } catch (\Exception $e) {
+            _logger('error', 'Message', 'withTrash', $e->getMessage());
+
+            return response()->json([
+                'status' => 'error',
+                'message' =>'server error 500.',
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

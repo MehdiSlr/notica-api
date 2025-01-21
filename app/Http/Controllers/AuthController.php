@@ -43,7 +43,7 @@ class AuthController extends Controller
             if (!$sent) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'sms not sent.',
+                    'message' => 'verification code not sent',
                 ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
             }
 
@@ -92,7 +92,7 @@ class AuthController extends Controller
                 return response()->json([
                     'status' => 'error',
                     'message' => 'wrong code',
-                ], 400);
+                ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
             }
 
             $code->delete();
@@ -110,16 +110,16 @@ class AuthController extends Controller
                 'status' => 'success',
                 'message' => 'phone verified successfully',
                 'auth' => [
-                    'status' => 'bearer',
+                    'type' => 'bearer',
                     'token' => $token,
                     'expires_at' => now()->addMinutes(config('jwt.ttl'))->toDateTimeString(),
                 ],
-            ], 200);
+            ], ResponseCode::HTTP_OK);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'server error 500.' . $e->getMessage(),
-            ], 500);
+            ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -172,12 +172,19 @@ class AuthController extends Controller
 
     public function logout()
     {
-        //invalidate token
-        JWTAuth::invalidate(JWTAuth::getToken());
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Successfully logged out'
-        ], ResponseCode::HTTP_OK);
+        try{
+            //invalidate token
+            JWTAuth::invalidate(JWTAuth::getToken());
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Successfully logged out'
+            ], ResponseCode::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'server error 500.' . $e->getMessage(),
+            ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     public function me()

@@ -217,14 +217,6 @@ class TemplateController extends Controller
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
-            if ($request->status == 'accept') {
-                $template->update(['status' => 'accept']);
-                return response()->json([
-                    'status' => 'success',
-                    'message' => 'template accepted successfully.',
-                ], ResponseCode::HTTP_OK);
-            }
-
             $oldData = $template->toArray();
             $template->update($request->all());
 
@@ -286,8 +278,9 @@ class TemplateController extends Controller
             }
 
             $templates = Template::onlyTrashed();
+            $company = Company::where('owner', $requestedUser->id)->first();
 
-            if ($requestedUser->role != 'admin' || $requestedUser->company_id != $templates->first()->company_id) {
+            if ($requestedUser->role != 'admin' || $company->id != $templates->first()->company_id) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'permission denied.'

@@ -4,9 +4,9 @@ return [
 
     'allowed_methods' => ['*'], // همه متدها (GET, POST, PUT, DELETE و غیره)
 
-    'allowed_origins' => ['http://localhost:8080', 'https://app.noticapp.ir'], // آدرس کلاینت (فرانت‌اند)
+    'allowed_origins' => ['*'], // آدرس کلاینت (فرانت‌اند)
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => ['*'],
 
     'allowed_headers' => ['*'], // همه هدرها
 

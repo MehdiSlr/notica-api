@@ -104,7 +104,7 @@ class CompanyController extends Controller
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
-            $allowed = ['file'];
+            $allowed = ['logo'];
             $filterRequest = $request->only($allowed);
             $extra = array_diff(array_keys($request->all()), $allowed);
 
@@ -116,7 +116,7 @@ class CompanyController extends Controller
             }
 
             $validator = Validator::make($filterRequest, [
-                'file' => 'required|file|mimes:jpeg,png,jpg,gif,svg,webp|max:10240',
+                'logo' => 'required|file|mimes:jpeg,png,jpg,gif,svg,webp|max:10240',
             ]);
 
             if ($validator->fails()) {
@@ -126,7 +126,7 @@ class CompanyController extends Controller
                 ], ResponseCode::HTTP_BAD_REQUEST);
             }
 
-            $fileName = $this->_uploadFile($request->file('file'));
+            $fileName = $this->_uploadFile($request->file('logo'));
             _logger('success', 'Company', 'logo', $request->all());
 
             return response()->json([
@@ -174,7 +174,7 @@ class CompanyController extends Controller
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
-            $allowed = ['name', 'logo', 'description', 'website', 'slogan', 'phone', 'email', 'national_id', 'address', 'established_date', 'email_verified_at', 'plan_id', 'settings'];
+            $allowed = ['name', 'logo', 'description', 'website', 'slogan', 'phone', 'email', 'national_id', 'address', 'established_date', 'email_verified_at', 'settings'];
             $filterRequest = $request->only($allowed);
             $extra = array_diff(array_keys($request->all()), $allowed);
 
@@ -197,7 +197,6 @@ class CompanyController extends Controller
                 'address' => 'required|string',
                 'established_date' => 'date',
                 'email_verified_at' => 'date',
-                'plan_id' => 'exists:plans,id',
                 'settings' => 'array',
             ]);
 
@@ -216,8 +215,9 @@ class CompanyController extends Controller
                     $fileName = $request->logo;
                 }
 
-                $fileRealName = "logo_{$request->name}_$fileName";
-                $isMoved = Storage::move("tmp/$fileName", "images/logos/logo_{$request->name}_$fileName");
+                $fileRealName ="images/logos/logo_{$request->name}_$fileName";
+                $path = env('APP_URL')."/upload/$fileRealName";
+                $isMoved = Storage::move("tmp/$fileName", $fileRealName);
 
                 if (!$isMoved) {
                     return response()->json([
@@ -226,11 +226,14 @@ class CompanyController extends Controller
                     ], ResponseCode::HTTP_NOT_FOUND);
                 }
 
-                $request->request->replace(['logo' => $fileRealName]);
+                $request->request->replace(['logo' => $path]);
             }
 
             $owner = $requestedUser->id;
-            $request->request->add(['owner' => $owner]);
+            $request->request->add([
+                'owner' => $owner,
+                'plan_id' => 1,
+            ]);
 
             Company::create($request->all());
 
@@ -315,6 +318,14 @@ class CompanyController extends Controller
                 ], ResponseCode::HTTP_FORBIDDEN);
             }
 
+            //if request has "plan_id"
+            if (isset($request->plan_id) && $requestedUser->role != 'admin') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'permission denied.'
+                ], ResponseCode::HTTP_FORBIDDEN);
+            }
+
             if ($request->has('logo')) {
                 if (strpos($request->logo, '/')) {
                     $fileParts = explode('/', $request->logo);
@@ -323,8 +334,9 @@ class CompanyController extends Controller
                     $fileName = $request->logo;
                 }
 
-                $fileRealName = "logo_{$company->name}_$fileName";
-                $isMoved = Storage::move("tmp/$fileName", "images/logos/$fileRealName");
+                $fileRealName ="images/logos/logo_{$company->name}_$fileName";
+                $path = env('APP_URL')."/upload/$fileRealName";
+                $isMoved = Storage::move("tmp/$fileName", $fileRealName);
 
                 if (!$isMoved) {
                     return response()->json([
@@ -333,7 +345,7 @@ class CompanyController extends Controller
                     ], ResponseCode::HTTP_NOT_FOUND);
                 }
 
-                $request->request->replace(['logo' => $fileRealName]);
+                $request->request->replace(['logo' => $path]);
             }
 
             $oldData = $company->toArray();

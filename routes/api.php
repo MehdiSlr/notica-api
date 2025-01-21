@@ -11,10 +11,11 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\OwnCors;
 
 // Plans
 Route::controller(PlanController::class)
-    ->middleware(['api'])
+    ->middleware(['api', OwnCors::class])
     ->prefix('plans')
     ->name('api.plans.')
     ->missing(function (Request $request) {
@@ -37,7 +38,7 @@ Route::controller(PlanController::class)
 
 // Companies
 Route::controller(CompanyController::class)
-    ->middleware(['api'])
+    ->middleware(['api', OwnCors::class])
     ->prefix('companies')
     ->name('api.companies.')
     ->missing(function (Request $request) {
@@ -61,7 +62,7 @@ Route::controller(CompanyController::class)
 
 //Users
 Route::controller(UserController::class)
-    ->middleware(['api'])
+    ->middleware(['api', OwnCors::class])
     ->prefix('users')
     ->name('api.users.')
     ->missing(function (Request $request) {
@@ -84,7 +85,7 @@ Route::controller(UserController::class)
 
 //Tickets
 Route::controller(TicketController::class)
-    ->middleware(['api'])
+    ->middleware(['api', OwnCors::class])
     ->prefix('tickets')
     ->name('api.tickets.')
     ->missing(function (Request $request) {
@@ -103,7 +104,7 @@ Route::controller(TicketController::class)
 
 //Messages
 Route::controller(MessageController::class)
-    ->middleware(['api'])
+    ->middleware(['api', OwnCors::class])
     ->prefix('messages')
     ->name('api.messages.')
     ->missing(function (Request $request) {
@@ -125,7 +126,7 @@ Route::controller(MessageController::class)
 
 //MessageTypes
 Route::controller(MessageTypeController::class)
-    ->middleware(['api'])
+    ->middleware(['api', OwnCors::class])
     ->prefix('message-types')
     ->name('api.message-types.')
     ->missing(function (Request $request) {
@@ -147,7 +148,7 @@ Route::controller(MessageTypeController::class)
 
 //Templates
 Route::controller(TemplateController::class)
-    ->middleware(['api'])
+    ->middleware(['api', OwnCors::class])
     ->prefix('templates')
     ->name('api.templates.')
     ->missing(function (Request $request) {
@@ -169,7 +170,7 @@ Route::controller(TemplateController::class)
 
 //ApiKeys
 Route::controller(ApiKeyController::class)
-    ->middleware(['api'])
+    ->middleware(['api', OwnCors::class])
     ->prefix('api-keys')
     ->name('api.api-keys.')
     ->missing(function (Request $request) {
@@ -190,7 +191,7 @@ Route::controller(ApiKeyController::class)
 
 // Auth
 Route::controller(AuthController::class)
-    ->middleware(['api'])
+    ->middleware(['api', OwnCors::class])
     ->prefix('auth')
     ->name('api.auth.')
     ->group(function () {

@@ -316,6 +316,35 @@ class MessageController extends Controller
         }
     }
 
+    public function restore(Message $message)
+    {
+        try {
+            $requestedUser = auth('api')->user();
+
+            if ($requestedUser == null || $requestedUser->id != $message->to) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'unauthorized.',
+                ], ResponseCode::HTTP_UNAUTHORIZED);
+            }
+
+            $message->restore();
+            _logger('success', 'Message', 'restore', $message);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => "message ($message->id) restored successfully.",
+            ], ResponseCode::HTTP_OK);
+        } catch (\Exception $e) {
+            _logger('error', 'Message', 'restore', $e->getMessage());
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'server error 500.',
+            ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     public function onlyTrash(Request $request)
     {
         try {

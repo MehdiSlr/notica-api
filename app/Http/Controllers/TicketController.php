@@ -127,7 +127,7 @@ class TicketController extends Controller
                 return response()->json([
                     'status' => 'error',
                     'message' => $validator->errors(),
-                ], ResponseCode::HTTP_BAD_REQUEST);
+                ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
             }
 
             $fileName = $this->_uploadFile($request->file('file'));
@@ -273,7 +273,7 @@ class TicketController extends Controller
                 return response()->json([
                     'status' => 'error',
                     'message' => $validator->errors(),
-                ], ResponseCode::HTTP_BAD_REQUEST);
+                ], ResponseCode::HTTP_UNPROCESSABLE_ENTITY);
             }
 
             if ($ticket->user_id != $requestedUser->id) {
