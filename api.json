@@ -2589,9 +2589,18 @@
                                             "type": "string",
                                             "example": "message sent successfully."
                                         },
-                                        "message id": {
-                                            "type": "string",
-                                            "example": "1"
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "message_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "telegram_status": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -7681,7 +7690,7 @@
         "\/users\/{id}": {
             "get": {
                 "description":"### Only admin can access this route.",
-                "operationId": "users.show",
+                "operationId": "Get User",
                 "tags": [
                     "User"
                 ],
@@ -7894,7 +7903,7 @@
                 ],
                 "parameters": [
                     {
-                        "name": "user",
+                        "name": "id",
                         "in": "path",
                         "required": true,
                         "description": "The user ID",

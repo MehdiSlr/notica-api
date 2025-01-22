@@ -215,12 +215,44 @@ class MessageController extends Controller
                 'is_read' => $request->is_read ?? 0
             ]);
 
+            //check if platform has 'telegram' and if user has telegram id, if so, send post request to bot
+            if (in_array('telegram', $platform) && $to->telegram_id) {
+                //set telegram message status
+                $telegram = true;
+                //send post request to bot
+                $ch = curl_init('https://metii-bots.ir/bot/notica/index.php');
+
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                    'Content-Type: application/json',
+                    'X-Source: NoticaAPI',
+                ]);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+                    'subject' => $request->subject,
+                    'message_text' => $messageText,
+                    'from' => Company::query()->where('id', $from)->first()->name,
+                    'to' => $to->telegram_id
+                ]));
+
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                $response = curl_exec($ch);
+                $error = curl_error($ch);
+                curl_close($ch);
+
+                if ($response === false) {
+                    echo "cURL Error: $error";
+                }
+            }
+
             _logger('success', 'Message','store', $request->all());
 
             return response()->json([
                 'status' =>'success',
                 'message' =>'message sent successfully.',
-                'message id' => $message->id
+                'data' => [
+                    'message_id' => $message->id,
+                    'telegram_status' => $telegram ?? false
+                ]
             ], ResponseCode::HTTP_CREATED);
         } catch (\Exception $e) {
             _logger('error', 'Message', 'store', $e->getMessage());
