@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\Response as ResponseCode;
 class MessageController extends Controller
 {
     use SendSMS;
-    public function index(Request $request)
+    public function index()
     {
         try {
             $requestedUser = auth('api')->user();
@@ -32,9 +32,12 @@ class MessageController extends Controller
 
             $messages = ($requestedUser->role == 'admin') ? Message::query() : Message::query()->where('to', $requestedUser->id);
 
-            $messages = $this->_fetchData($request, $messages);
+            $messages = $messages->get();
 
-            return Resource::collection($messages);
+            return response()->json([
+                'status' => 'success',
+                'data' => $messages
+            ]);
         } catch (\Exception $e) {
             _logger('error', 'Message', 'index', $e->getMessage());
 
@@ -377,7 +380,7 @@ class MessageController extends Controller
         }
     }
 
-    public function onlyTrash(Request $request)
+    public function onlyTrash()
     {
         try {
             $requestedUser = auth('api')->user();
@@ -389,11 +392,12 @@ class MessageController extends Controller
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
-            $messages = Message::onlyTrashed();
+            $messages = Message::onlyTrashed()->get();
 
-            $messages = $this->_fetchData($request, $messages);
-
-            return Resource::collection($messages);
+            return response()->json([
+                'status' => 'success',
+                'data' => $messages
+            ]);
         } catch (\Exception $e) {
             _logger('error', 'Message', 'onlyTrashed', $e->getMessage());
 
@@ -404,7 +408,7 @@ class MessageController extends Controller
         }
     }
 
-    public function withTrash(Request $request)
+    public function withTrash()
     {
         try {
             $requestedUser = auth('api')->user();
@@ -415,11 +419,12 @@ class MessageController extends Controller
                     'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
-            $messages = Message::withTrashed();
+            $messages = Message::withTrashed()->get();
 
-            $messages = $this->_fetchData($request, $messages);
-
-            return Resource::collection($messages);
+            return response()->json([
+                'status' => 'success',
+                'data' => $messages
+            ]);
         } catch (\Exception $e) {
             _logger('error', 'Message', 'withTrash', $e->getMessage());
 
@@ -428,22 +433,5 @@ class MessageController extends Controller
                 'message' =>'server error 500.',
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    private function _fetchData(Request $request, $query)
-    {
-        if (!$request->has('per') || $request->input('per') === null) {
-            $request->merge(['per' => 25]);
-        }
-
-        if ($request->has('search') && !empty($request->input('search'))) {
-            $query->where('title', 'LIKE', "%{$request->input('search')}%");
-        }
-
-        if ($request->has('sort_by') && $request->has('sort_direction') && !empty($request->input('sort_by')) && !empty($request->input('sort_direction'))) {
-            $query->orderBy($request->input('sort_by'), $request->input('sort_direction'));
-        }
-
-        return $query->paginate($request->input('per'));
     }
 }

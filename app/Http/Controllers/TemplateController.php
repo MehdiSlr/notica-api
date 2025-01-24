@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\Response as ResponseCode;
 
 class TemplateController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         try {
             $requestedUser = auth('api')->user();
@@ -35,9 +35,12 @@ class TemplateController extends Controller
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
-            $temlates = $this->_fetchData($request, $temlates);
+            $temlates = $temlates->get();
 
-            return Resource::collection($temlates);
+            return response()->json([
+                'status' => 'success',
+                'data' => $temlates
+            ]);
         } catch (\Exception $e) {
             _logger('error', 'Template', 'index', $e->getMessage());
 
@@ -265,7 +268,7 @@ class TemplateController extends Controller
         }
     }
 
-    public function onlyTrash(Request $request)
+    public function onlyTrash()
     {
         try {
             $requestedUser = auth('api')->user();
@@ -287,9 +290,12 @@ class TemplateController extends Controller
                 ], ResponseCode::HTTP_FORBIDDEN);
             }
 
-            $templates = $this->_fetchData($request, $templates);
+            $templates = $templates->get();
 
-            return Resource::collection($templates);
+            return response()->json([
+                'status' => 'success',
+                'data' => $templates
+            ]);
         } catch (\Exception $e) {
             _logger('error', 'Template', 'onlyTrashed', $e->getMessage());
 
@@ -300,7 +306,7 @@ class TemplateController extends Controller
         }
     }
 
-    public function withTrash(Request $request)
+    public function withTrash()
     {
         try {
             $requestedUser = auth('api')->user();
@@ -311,11 +317,12 @@ class TemplateController extends Controller
                     'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
-            $templates = Template::withTrashed();
+            $templates = Template::withTrashed()->get();
 
-            $templates = $this->_fetchData($request, $templates);
-
-            return Resource::collection($templates);
+            return response()->json([
+                'status' => 'success',
+                'data' => $templates
+            ]);
         } catch (\Exception $e) {
             _logger('error', 'Template', 'withTrash', $e->getMessage());
 
@@ -382,22 +389,5 @@ class TemplateController extends Controller
                 'message' => 'server error 500.',
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    private function _fetchData(Request $request, $query)
-    {
-        if (!$request->has('per') || $request->input('per') === null) {
-            $request->merge(['per' => 25]);
-        }
-
-        if ($request->has('search') && !empty($request->input('search'))) {
-            $query->where('title', 'LIKE', "%{$request->input('search')}%");
-        }
-
-        if ($request->has('sort_by') && $request->has('sort_direction') && !empty($request->input('sort_by')) && !empty($request->input('sort_direction'))) {
-            $query->orderBy($request->input('sort_by'), $request->input('sort_direction'));
-        }
-
-        return $query->paginate($request->input('per'));
     }
 }

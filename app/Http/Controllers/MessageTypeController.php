@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Response as ResponseCode;
 
 class MessageTypeController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         try {
             $requestedUser = auth('api')->user();
@@ -23,11 +23,12 @@ class MessageTypeController extends Controller
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
-            $messageTypes = MessageType::query();
+            $messageTypes = MessageType::query()->get();
 
-            $messageTypes = $this->_fetchData($request, $messageTypes);
-
-            return Resource::collection($messageTypes);
+            return response()->json([
+                'status' => 'success',
+                'data' => $messageTypes
+            ]);
         } catch (\Exception $e) {
             _logger('error', 'MessageType', 'index', $e->getMessage());
 
@@ -267,7 +268,7 @@ class MessageTypeController extends Controller
         }
     }
 
-    public function onlyTrash(Request $request)
+    public function onlyTrash()
     {
         try {
             $requestedUser = auth('api')->user();
@@ -279,11 +280,13 @@ class MessageTypeController extends Controller
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
-            $messages = MessageType::onlyTrashed();
+            $messageTypes = MessageType::onlyTrashed()->get();
 
-            $messages = $this->_fetchData($request, $messages);
 
-            return Resource::collection($messages);
+            return response()->json([
+                'status' => 'success',
+                'data' => $messageTypes
+            ]);
         } catch (\Exception $e) {
             _logger('error', 'Message', 'onlyTrashed', $e->getMessage());
 
@@ -294,7 +297,7 @@ class MessageTypeController extends Controller
         }
     }
 
-    public function withTrash(Request $request)
+    public function withTrash()
     {
         try {
             $requestedUser = auth('api')->user();
@@ -305,11 +308,13 @@ class MessageTypeController extends Controller
                     'message' => 'unauthorized.',
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
-            $messages = MessageType::withTrashed();
 
-            $messages = $this->_fetchData($request, $messages);
+            $messageTypes = MessageType::withTrashed()->get();
 
-            return Resource::collection($messages);
+            return response()->json([
+                'status' => 'success',
+                'data' => $messageTypes
+            ]);
         } catch (\Exception $e) {
             _logger('error', 'Message', 'withTrash', $e->getMessage());
 
@@ -318,22 +323,5 @@ class MessageTypeController extends Controller
                 'message' =>'server error 500.',
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    private function _fetchData(Request $request, $query)
-    {
-        if (!$request->has('per') || $request->input('per') === null) {
-            $request->merge(['per' => 25]);
-        }
-
-        if ($request->has('search') && !empty($request->input('search'))) {
-            $query->where('title', 'LIKE', "%{$request->input('search')}%");
-        }
-
-        if ($request->has('sort_by') && $request->has('sort_direction') && !empty($request->input('sort_by')) && !empty($request->input('sort_direction'))) {
-            $query->orderBy($request->input('sort_by'), $request->input('sort_direction'));
-        }
-
-        return $query->paginate($request->input('per'));
     }
 }

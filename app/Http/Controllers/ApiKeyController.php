@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Response as ResponseCode;
 
 class ApiKeyController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         try {
             $requestedUser = auth('api')->user();
@@ -37,9 +37,12 @@ class ApiKeyController extends Controller
                     ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
-            $apiKeys = $this->_fetchData($request, $apiKeys);
+            $apiKeys = $apiKeys->get();
 
-            return Resource::collection($apiKeys);
+            return response()->json([
+                'status' => 'success',
+                'data' => $apiKeys
+            ]);
         } catch (\Exception $e) {
             _logger('error', 'ApiKey', 'index', $e->getMessage());
 
@@ -268,21 +271,4 @@ class ApiKeyController extends Controller
     //         ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
     //     }
     // }
-
-    private function _fetchData(Request $request, $query)
-    {
-        if (!$request->has('per') || $request->input('per') === null) {
-            $request->merge(['per' => 25]);
-        }
-
-        if ($request->has('search') && !empty($request->input('search'))) {
-            $query->where('title', 'LIKE', "%{$request->input('search')}%");
-        }
-
-        if ($request->has('sort_by') && $request->has('sort_direction') && !empty($request->input('sort_by')) && !empty($request->input('sort_direction'))) {
-            $query->orderBy($request->input('sort_by'), $request->input('sort_direction'));
-        }
-
-        return $query->paginate($request->input('per'));
-    }
 }

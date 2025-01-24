@@ -16,7 +16,7 @@ class CompanyController extends Controller
 {
     use FileManager;
 
-    public function index(Request $request)
+    public function index()
     {
         try {
             $requestedUser = auth('api')->user();
@@ -33,12 +33,13 @@ class CompanyController extends Controller
             } else {
                 $companies = Company::query()->whereHas('messages', function ($query) use ($requestedUser) {
                     $query->where('to', $requestedUser->id);
-                });
+                })->get();
             }
 
-            $companies = $this->_fetchData($request, $companies);
-
-            return Resource::collection($companies);
+            return response()->json([
+                'status' => 'success',
+                'data' => $companies
+            ]);
         } catch (\Exception $e) {
             _logger('error', 'Company', 'index', $e->getMessage());
 
@@ -454,7 +455,7 @@ class CompanyController extends Controller
     //     }
     // }
 
-    public function onlyTrash(Request $request)
+    public function onlyTrash()
     {
         try {
             $requestedUser = auth('api')->user();
@@ -466,11 +467,12 @@ class CompanyController extends Controller
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
-            $companies = Company::onlyTrashed();
+            $companies = Company::onlyTrashed()->get();
 
-            $companies = $this->_fetchData($request, $companies);
-
-            return Resource::collection($companies);
+            return response()->json([
+                'status' => 'success',
+                'data' => $companies
+            ]);
         } catch (\Exception $e) {
             _logger('error', 'Company', 'onlyTrashed', $e->getMessage());
 
@@ -481,7 +483,7 @@ class CompanyController extends Controller
         }
     }
 
-    public function withTrash(Request $request)
+    public function withTrash()
     {
         try {
             $requestedUser = auth('api')->user();
@@ -493,11 +495,13 @@ class CompanyController extends Controller
                 ], ResponseCode::HTTP_UNAUTHORIZED);
             }
 
-            $companies = Company::withTrashed();
+            $companies = Company::withTrashed()->get();
 
-            $companies = $this->_fetchData($request, $companies);
 
-            return Resource::collection($companies);
+            return response()->json([
+                'status' => 'success',
+                'data' => $companies
+            ]);
         } catch (\Exception $e) {
             _logger('error', 'Company', 'withTrashed', $e->getMessage());
 
@@ -506,22 +510,5 @@ class CompanyController extends Controller
                 'message' => 'server error 500.',
             ], ResponseCode::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }
-
-    protected function _fetchData(Request $request, $query)
-    {
-        if (!$request->has('per') || $request->input('per') === null) {
-            $request->merge(['per' => 25]);
-        }
-
-        if ($request->has('search') && !empty($request->input('search'))) {
-            $query->where('title', 'LIKE', "%{$request->input('search')}%");
-        }
-
-        if ($request->has('sort_by') && $request->has('sort_direction') && !empty($request->input('sort_by')) && !empty($request->input('sort_direction'))) {
-            $query->orderBy($request->input('sort_by'), $request->input('sort_direction'));
-        }
-
-        return $query->paginate($request->input('per'));
     }
 }
